@@ -154,9 +154,7 @@ namespace GameObjects
         }
 
         public void ApplyInfluences()
-        {
-            foreach (Person person in base.GameObjects)
-
+        {           
             // 使用并行处理（如果线程安全）
             if (base.GameObjects.Count > 100)
             {
@@ -178,6 +176,7 @@ namespace GameObjects
                     person.ApplyAllTreasures(false);
                 }
             }
+
         }
         // 条件筛选（返回PersonList）
         public PersonList Where(Func<Person, bool> predicate)
