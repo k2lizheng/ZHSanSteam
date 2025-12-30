@@ -320,15 +320,22 @@ namespace GameObjects
             // 将 CurrentQueue 转换为数组
             var currentQueueArray = new List<Troop>();
             
-            currentQueueArray = this.CurrentQueue.ToList();            
-
-            Parallel.ForEach(currentQueueArray, troop =>
-            {
-                if (troop != null && troop.Action != TroopAction.Stop)
+                if (this.CurrentQueue != null)
                 {
-                    troop.AddMoveAnimationIndex(steps);
+                    currentQueueArray = this.CurrentQueue.ToList();
                 }
-            });
+            
+
+            if (currentQueueArray.Count > 0)
+            {
+                Parallel.ForEach(currentQueueArray, troop =>
+                {
+                    if (troop != null && troop.Action != TroopAction.Stop)
+                    {
+                        troop.AddMoveAnimationIndex(steps);
+                    }
+                });
+            }
         }
 
         public bool CurrentQueueEmpty
