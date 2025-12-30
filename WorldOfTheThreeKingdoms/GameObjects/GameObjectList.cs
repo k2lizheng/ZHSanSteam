@@ -1,16 +1,19 @@
 ﻿using GameGlobal;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Linq;
-using System.Runtime.Serialization;
-using GameObjects.TroopDetail;
 using GameObjects.FactionDetail;
 using GameObjects.PersonDetail;
+using GameObjects.TroopDetail;
+using SharpDX;
+using System;
+using System.Collections;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace GameObjects
 {
@@ -27,6 +30,22 @@ namespace GameObjects
     public class GameObjectList : IEnumerable
     {
         private List<GameObject> gameObjects = new List<GameObject>();
+        private static ConcurrentDictionary<string, PropertyComparer> _comparerCache = new ConcurrentDictionary<string, PropertyComparer>();
+        private Dictionary<int, GameObject> idIndex = new Dictionary<int, GameObject>();// ID查找索引
+        // 序列化回调方法
+        [OnDeserializing]
+        private void OnDeserializing(StreamingContext context)
+        {
+            // 在反序列化开始前初始化字典
+            //idIndex = new Dictionary<int, GameObject>();
+        }
+
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            // 反序列化完成后重建索引
+            //RebuildIdIndex();
+        }
         [DataMember]
         public bool IsNumber;
         [DataMember]
@@ -46,9 +65,56 @@ namespace GameObjects
             set
             {
                 this.gameObjects = value;
+                RebuildIdIndex();
+            }
+        }
+        // 构造函数中初始化查找字典
+        public GameObjectList()
+        {
+            RebuildIdIndex();
+        }
+        private void RebuildIdIndex()
+        {
+            if (idIndex == null)
+            {
+                idIndex = new Dictionary<int, GameObject>();
+            }
+            else
+            {
+                idIndex.Clear();
+            }
+            if(gameObjects != null)
+            {
+                foreach (var obj in gameObjects)
+                {
+                    if (obj != null && obj.ID >= 0)
+                    {
+                        idIndex[obj.ID] = obj;
+                    }
+                }
+            }
+            
+        }
+
+        private void AddToIdIndex(GameObject obj)
+        {
+            if (obj != null && obj.ID >= 0)
+            {
+                if (idIndex == null)
+                {
+                    idIndex = new Dictionary<int, GameObject>();
+                }
+                idIndex[obj.ID] = obj;
             }
         }
 
+        private void RemoveFromIdIndex(GameObject obj)
+        {
+            if (obj != null && obj.ID >= 0 && idIndex != null)
+            {
+                idIndex.Remove(obj.ID);
+            }
+        }
         public void SetImmutable()
         {
             immutable = true;
@@ -59,13 +125,19 @@ namespace GameObjects
             if (immutable)
                 throw new Exception("Trying to add things to an immutable list");
             this.gameObjects.Add(t);
+            AddToIdIndex(t); // 更新ID索引
         }
 
         public void AddRange(GameObjectList t)
         {
             if (immutable)
                 throw new Exception("Trying to add things to an immutable list");
-            this.gameObjects.AddRange(t.GameObjects);
+            //this.gameObjects.AddRange(t.GameObjects);
+            foreach (var obj in t.gameObjects)
+            {
+                this.gameObjects.Add(obj);
+                AddToIdIndex(obj); // 更新ID索引
+            }
         }
 
         public void Clear()
@@ -73,30 +145,53 @@ namespace GameObjects
             if (immutable)
                 throw new Exception("Trying to clear an immutable list");
             this.gameObjects.Clear();
+            idIndex?.Clear();// 清空ID索引
         }
 
         public void ClearSelected()
         {
-            foreach (GameObject obj2 in this.gameObjects)
+            //foreach (GameObject obj2 in this.gameObjects)
+            //{
+            //    obj2.Selected = false;
+            //}
+            // 使用for循环比foreach稍快
+            //for (int i = 0; i < gameObjects.Count; i++)
+            //{
+            //    gameObjects[i].Selected = false;
+            //}
+            // 使用LINQ简化
+            foreach (var obj in gameObjects.Where(obj => obj.Selected))
             {
-                obj2.Selected = false;
+                obj.Selected = false;
             }
         }
 
         public List<int> GenerateRandomIndexList()
         {
-            int num;
-            List<int> list = new List<int>();
-            for (num = 0; num < this.Count; num++)
+            //int num;
+            //List<int> list = new List<int>();
+            //for (num = 0; num < this.Count; num++)
+            //{
+            //    list.Add(num);
+            //}
+            //for (num = 0; num < this.Count; num++)
+            //{
+            //    int num2 = num + GameObject.Random(this.Count - num);
+            //    int num3 = list[num];
+            //    list[num] = list[num2];
+            //    list[num2] = num3;
+            //}
+            var list = Enumerable.Range(0, Count).ToList();
+
+            // 使用更好的随机算法
+            var random = new Random();
+            int n = list.Count;
+
+            while (n > 1)
             {
-                list.Add(num);
-            }
-            for (num = 0; num < this.Count; num++)
-            {
-                int num2 = num + GameObject.Random(this.Count - num);
-                int num3 = list[num];
-                list[num] = list[num2];
-                list[num2] = num3;
+                n--;
+                int k = random.Next(n + 1);
+                (list[k], list[n]) = (list[n], list[k]); // 交换元素
             }
             return list;
         }
@@ -108,19 +203,34 @@ namespace GameObjects
 
         public int GetFreeGameObjectID()
         {
-            for (int i = this.Count; i >= 0; i--)
+            //for (int i = this.Count; i >= 0; i--)
+            //{
+            //    if (!this.HasGameObject(i))
+            //    {
+            //        return i;
+            //    }
+            //}
+            // 如果有索引，可以更快查找
+            if (idIndex.Count == 0) return 0;
+
+            // 从当前最大ID+1开始，向下查找空闲ID
+            int maxId = idIndex.Keys.Max();
+
+            // 最多查找1000个ID，避免无限循环
+            for (int i = Math.Max(0, maxId - 1000); i <= maxId + 1000; i++)
             {
-                if (!this.HasGameObject(i))
-                {
+                if (!idIndex.ContainsKey(i))
                     return i;
-                }
             }
+
+            // 如果没找到，返回最大ID+1
+            return maxId + 1;
             throw new Exception("GetFreeGameObjectID Error.");
         }
 
         public GameObject GetGameObject(int ID)
         {
-            if (ID >= 0)
+            if (idIndex == null && ID >= 0)
             {
                 return this.gameObjects.FirstOrDefault(ga => ga != null && ga.ID == ID);
                 //foreach (GameObject obj2 in this.gameObjects)
@@ -130,6 +240,10 @@ namespace GameObjects
                 //        return obj2;
                 //    }
                 //}
+            }
+            else if (ID >= 0 && idIndex.TryGetValue(ID, out GameObject gameObject))
+            {
+                return gameObject;
             }
             return null;
         }
@@ -149,43 +263,84 @@ namespace GameObjects
         public GameObjectList GetList()
         {
             GameObjectList list = new GameObjectList();
-            foreach (GameObject obj2 in this.gameObjects)
-            {
-                list.Add(obj2);
-            }
+            //foreach (GameObject obj2 in this.gameObjects)
+            //{
+            //    list.Add(obj2);
+            //}
+            list.gameObjects.AddRange(this.gameObjects); // 直接添加整个列表
             return list;
         }
 
         public GameObjectList GetList(params GameObjectCondition[] conditions)
         {
             GameObjectList list = new GameObjectList();
-            foreach (GameObject obj2 in this.gameObjects)
+            //foreach (GameObject obj2 in this.gameObjects)
+            //{
+            //    bool flag = true;
+            //    for (int i = 0; i < conditions.Length; i++)
+            //    {
+            //        if (conditions[i].LEG == 0)
+            //        {
+            //            if (!StaticMethods.GetPropertyValue(obj2, conditions[i].PropertyName).Equals(conditions[i].PropertyValue))
+            //            {
+            //                flag = false;
+            //                break;
+            //            }
+            //        }
+            //        else if (conditions[i].LEG > 0)
+            //        {
+            //            if (((int)StaticMethods.GetPropertyValue(obj2, conditions[i].PropertyName)) <= ((int)conditions[i].PropertyValue))
+            //            {
+            //                flag = false;
+            //                break;
+            //            }
+            //        }
+            //        else if ((conditions[i].LEG < 0) && (((int)StaticMethods.GetPropertyValue(obj2, conditions[i].PropertyName)) >= ((int)conditions[i].PropertyValue)))
+            //        {
+            //            flag = false;
+            //            break;
+            //        }
+            //    }
+            //    if (flag)
+            //    {
+            //        list.Add(obj2);
+            //    }
+            //}
+            // 使用for循环比foreach稍快
+            for (int i = 0; i < gameObjects.Count; i++)
             {
+                GameObject obj2 = gameObjects[i];
                 bool flag = true;
-                for (int i = 0; i < conditions.Length; i++)
+
+                // 展开循环，减少数组访问开销
+                for (int j = 0; j < conditions.Length; j++)
                 {
-                    if (conditions[i].LEG == 0)
+                    var condition = conditions[j];
+                    object propertyValue = StaticMethods.GetPropertyValue(obj2, condition.PropertyName);
+
+                    if (condition.LEG == 0)
                     {
-                        if (!StaticMethods.GetPropertyValue(obj2, conditions[i].PropertyName).Equals(conditions[i].PropertyValue))
+                        if (!propertyValue.Equals(condition.PropertyValue))
                         {
                             flag = false;
                             break;
                         }
                     }
-                    else if (conditions[i].LEG > 0)
+                    else if (condition.LEG > 0)
                     {
-                        if (((int)StaticMethods.GetPropertyValue(obj2, conditions[i].PropertyName)) <= ((int)conditions[i].PropertyValue))
+                        if (((int)propertyValue) <= ((int)condition.PropertyValue))
                         {
                             flag = false;
                             break;
                         }
                     }
-                    else if ((conditions[i].LEG < 0) && (((int)StaticMethods.GetPropertyValue(obj2, conditions[i].PropertyName)) >= ((int)conditions[i].PropertyValue)))
+                    else if (((int)propertyValue) >= ((int)condition.PropertyValue))
                     {
                         flag = false;
                         break;
                     }
                 }
+
                 if (flag)
                 {
                     list.Add(obj2);
@@ -266,13 +421,16 @@ namespace GameObjects
         public GameObjectList GetSelectedList()
         {
             GameObjectList list = new GameObjectList();
-            foreach (GameObject obj2 in this.gameObjects)
-            {
-                if (obj2.Selected)
-                {
-                    list.Add(obj2);
-                }
-            }
+            //foreach (GameObject obj2 in this.gameObjects)
+            //{
+            //    if (obj2.Selected)
+            //    {
+            //        list.Add(obj2);
+            //    }
+            //}
+            // 使用LINQ简化
+            var selectedObjects = gameObjects.Where(obj => obj.Selected).ToList();
+            list.AddRange(new GameObjectList { GameObjects = selectedObjects });
             return list;
         }
 
@@ -283,7 +441,7 @@ namespace GameObjects
 
         public bool HasGameObject(int ID)
         {
-            if (ID >= 0)
+            if (idIndex == null && ID >= 0)
             {
                 foreach (GameObject obj2 in this.gameObjects)
                 {
@@ -292,7 +450,9 @@ namespace GameObjects
                         return true;
                     }
                 }
-            }
+            }           
+            else return ID >= 0 && idIndex.ContainsKey(ID);
+
             return false;
         }
 
@@ -310,14 +470,16 @@ namespace GameObjects
 
         public bool HasSelectedItem()
         {
-            foreach (GameObject obj2 in this.gameObjects)
-            {
-                if (obj2.Selected)
-                {
-                    return true;
-                }
-            }
-            return false;
+            //foreach (GameObject obj2 in this.gameObjects)
+            //{
+            //    if (obj2.Selected)
+            //    {
+            //        return true;
+            //    }
+            //}           
+            //return false;
+            // 使用LINQ Any方法
+            return gameObjects.Any(obj => obj.Selected);
         }
 
         public int IndexOf(GameObject t)
@@ -357,33 +519,62 @@ namespace GameObjects
         {
             if (immutable)
                 throw new Exception("Trying to remove things to an immutable list");
-            this.gameObjects.RemoveAll(delegate(GameObject o)
-            {
-                return o == gameObject;
-            }
-            );
+            //this.gameObjects.RemoveAll(delegate(GameObject o)
+            //{
+            //    return o == gameObject;
+            //}
+            //);
             //this.gameObjects.Remove(gameObject);
+            if (gameObjects.Remove(gameObject))
+            {
+                RemoveFromIdIndex(gameObject); // 从索引中移除
+            }
         }
 
         public void RemoveAt(int index)
         {
             if (immutable)
                 throw new Exception("Trying to remove things to an immutable list");
-            this.gameObjects.RemoveAt(index);
+            if (index >= 0 && index < gameObjects.Count)
+            {
+                GameObject obj = gameObjects[index];
+                this.gameObjects.RemoveAt(index);
+                RemoveFromIdIndex(obj); // 从索引中移除
+            }
         }
 
         public void ReSort()
         {
-            PropertyComparer comparer = new PropertyComparer(this.PropertyName, this.IsNumber, this.SmallToBig);
+            //PropertyComparer comparer = new PropertyComparer(this.PropertyName, this.IsNumber, this.SmallToBig);
+            string key = $"{PropertyName}_{IsNumber}_{SmallToBig}";
+            var comparer = _comparerCache.GetOrAdd(key,
+                k => new PropertyComparer(PropertyName, IsNumber, SmallToBig));
+            this.gameObjects.Sort(comparer);
             this.gameObjects.Sort(comparer);
         }
 
         public string SaveToString()
         {
-            StringBuilder builder = new StringBuilder();
-            foreach (GameObject obj2 in this.gameObjects)
+            //StringBuilder builder = new StringBuilder();
+            //foreach (GameObject obj2 in this.gameObjects)
+            //{
+            //    builder.Append(obj2.ID.ToString() + " ");
+            //}
+            if (gameObjects.Count == 0) return string.Empty;
+
+            // 预分配StringBuilder容量，假设每个ID平均8个字符
+            StringBuilder builder = new StringBuilder(gameObjects.Count * 8);
+
+            for (int i = 0; i < gameObjects.Count; i++)
             {
-                builder.Append(obj2.ID.ToString() + " ");
+                builder.Append(gameObjects[i].ID);
+                builder.Append(' ');
+            }
+
+            // 移除最后一个空格
+            if (builder.Length > 0)
+            {
+                builder.Length--; // 移除最后一个字符
             }
             return builder.ToString();
         }
@@ -401,12 +592,22 @@ namespace GameObjects
 
         public void SetSelected(GameObjectList gameObjectList)
         {
-            foreach (GameObject gameObject in this.gameObjects)
+            //foreach (GameObject gameObject in this.gameObjects)
+            //{
+            //    if (gameObjectList.HasGameObject(gameObject))
+            //    {
+            //        gameObject.Selected = true;
+            //    }
+            //}
+            // 先全部取消选中
+            ClearSelected();
+
+            // 使用HashSet加速查找
+            var targetSet = new HashSet<GameObject>(gameObjectList.GameObjects);
+
+            foreach (var gameObject in gameObjects)
             {
-                if (gameObjectList.HasGameObject(gameObject))
-                {
-                    gameObject.Selected = true;
-                }
+                gameObject.Selected = targetSet.Contains(gameObject);
             }
         }
 
@@ -441,9 +642,129 @@ namespace GameObjects
             }
             set
             {
-                this.gameObjects[index] = value;
+                //this.gameObjects[index] = value;
+                if (immutable && index < gameObjects.Count)
+                    throw new Exception("Trying to modify an immutable list");
+
+                if (index < gameObjects.Count)
+                {
+                    // 更新索引
+                    RemoveFromIdIndex(gameObjects[index]);
+                    gameObjects[index] = value;
+                    AddToIdIndex(value);
+                }
+                else
+                {
+                    throw new IndexOutOfRangeException();
+                }
             }
         }
+        // 批量操作
+        public void ForEach(Action<GameObject> action)
+        {
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                action(gameObjects[i]);
+            }
+        }
+
+        // 并行批量操作（对于大量数据）
+        public void ParallelForEach(Action<GameObject> action)
+        {
+            Parallel.ForEach(gameObjects, action);
+        }
+
+        // 条件筛选
+        public GameObjectList Where(Func<GameObject, bool> predicate)
+        {
+            GameObjectList result = new GameObjectList();
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (predicate(gameObjects[i]))
+                {
+                    result.Add(gameObjects[i]);
+                }
+            }
+            return result;
+        }
+        // 第一个满足条件的
+        public GameObject FirstOrDefault(Func<GameObject, bool> predicate)
+        {
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (predicate(gameObjects[i]))
+                {
+                    return gameObjects[i];
+                }
+            }
+            return null;
+        }
+        // 投影
+        public List<TResult> Select<TResult>(Func<GameObject, TResult> selector)
+        {
+            return gameObjects.Select(selector).ToList();
+        }
+
+        // 检查是否所有元素满足条件
+        public bool All(Func<GameObject, bool> predicate)
+        {
+            return gameObjects.All(predicate);
+        }
+
+        // 检查是否存在元素满足条件
+        public bool Any(Func<GameObject, bool> predicate)
+        {
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (predicate(gameObjects[i]))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 计数满足条件的元素
+        public int CountByPredicate(Func<GameObject, bool> predicate)
+        {
+            int count = 0;
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (predicate(gameObjects[i]))
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+        // 排序
+        public GameObjectList OrderBy<TKey>(Func<GameObject, TKey> keySelector, bool descending = false)
+        {
+            var comparer = Comparer<TKey>.Default;
+            GameObjectList result = new GameObjectList();
+            result.GameObjects.AddRange(gameObjects);
+
+            result.GameObjects.Sort((a, b) => {
+                TKey keyA = keySelector(a);
+                TKey keyB = keySelector(b);
+                int comparison = comparer.Compare(keyA, keyB);
+                return descending ? -comparison : comparison;
+            });
+
+            return result;
+        }
+        // 获取最大值
+        public GameObject MaxBy<TKey>(Func<GameObject, TKey> selector) where TKey : IComparable<TKey>
+        {
+            return gameObjects.OrderByDescending(selector).FirstOrDefault();
+        }
+
+        // 获取最小值
+        public GameObject MinBy<TKey>(Func<GameObject, TKey> selector) where TKey : IComparable<TKey>
+        {
+            return gameObjects.OrderBy(selector).FirstOrDefault();
+        }
+
 
         /// <summary>
 
