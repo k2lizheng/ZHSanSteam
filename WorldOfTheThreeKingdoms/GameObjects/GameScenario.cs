@@ -1,4 +1,5 @@
 using GameGlobal;
+using GameManager;
 using GameObjects.Animations;
 using GameObjects.ArchitectureDetail;
 using GameObjects.ArchitectureDetail.EventEffect;
@@ -10,17 +11,18 @@ using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Platforms;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Linq;
-using Tools;
-using GameManager;
-using Platforms;
-using WorldOfTheThreeKingdoms.GameScreens;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using Tools;
+using WorldOfTheThreeKingdoms.GameScreens;
 
 namespace GameObjects
 {
@@ -1653,17 +1655,51 @@ namespace GameObjects
 
         }
 
+        //public void DayStartingEvent()
+        //{
+        //    this.Factions.SetControlling(false);
+            
+        //    foreach (Troop troop in this.Troops.GetList())
+        //    {
+        //        if (troop.BelongedFaction == null || troop.BelongedLegion == null || !troop.BelongedLegion.Troops.HasGameObject(troop))
+        //        {
+        //            troop.AI();
+        //        }
+        //    }
+        //    this.Troops.BuildQueue();
+        //    foreach (Architecture architecture in this.Architectures.GetList())
+        //    {
+        //        architecture.HireFinished = false;
+        //        architecture.HasManualHire = false;
+        //        architecture.TodayPersonArriveNote = false;
+
+        //    }
+        //}
         public void DayStartingEvent()
         {
             this.Factions.SetControlling(false);
-            
-            foreach (Troop troop in this.Troops.GetList())
+
+            // 只对计算密集型部分并行化，确保线程安全
+            var troops = this.Troops.GetList();
+
+            // 使用分区并行处理，减少锁竞争
+            var partitioner = Partitioner.Create(0, troops.Count);
+
+            Parallel.ForEach(partitioner, range =>
             {
-                if (troop.BelongedFaction == null || troop.BelongedLegion == null || !troop.BelongedLegion.Troops.HasGameObject(troop))
+                for (int i = range.Item1; i < range.Item2; i++)
                 {
-                    troop.AI();
+                    var troop = troops[i] as Troop;
+                    if (troop.BelongedFaction == null || troop.BelongedLegion == null ||
+                        !troop.BelongedLegion.Troops.HasGameObject(troop))
+                    {
+                        // 如果AI()是纯计算，可以不加锁
+                        // 如果需要写共享数据，需要同步
+                        troop.AI();
+                    }
                 }
-            }
+            });
+
             this.Troops.BuildQueue();
             foreach (Architecture architecture in this.Architectures.GetList())
             {
@@ -1672,6 +1708,15 @@ namespace GameObjects
                 architecture.TodayPersonArriveNote = false;
 
             }
+            // Architecture操作通常是独立的，可以直接并行
+            //var architectures = this.Architectures.GetList();
+            //Parallel.ForEach(architectures, architecture =>
+            //{
+            //    // 确认这些属性是否只被当前线程访问
+            //    architecture.HireFinished = false;
+            //    architecture.HasManualHire = false;
+            //    architecture.TodayPersonArriveNote = false;
+            //});
         }
 
         public void FireDayEvent()

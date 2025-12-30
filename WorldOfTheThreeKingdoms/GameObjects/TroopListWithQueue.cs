@@ -2,8 +2,10 @@
 using GameManager;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace GameObjects
@@ -298,17 +300,35 @@ namespace GameObjects
 
         public void StepAnimationIndex(int steps)
         {
+            //if (this.CurrentTroop != null)
+            //{
+            //    this.CurrentTroop.AddMoveAnimationIndex(steps);
+            //}
+            //foreach (Troop troop in this.CurrentQueue)
+            //{
+            //    if (troop.Action != TroopAction.Stop)
+            //    {
+            //        troop.AddMoveAnimationIndex(steps);
+            //    }
+            //}
+            // 动画步进可以并行处理
             if (this.CurrentTroop != null)
             {
                 this.CurrentTroop.AddMoveAnimationIndex(steps);
             }
-            foreach (Troop troop in this.CurrentQueue)
+
+            // 将 CurrentQueue 转换为数组
+            var currentQueueArray = new List<Troop>();
+            
+            currentQueueArray = this.CurrentQueue.ToList();            
+
+            Parallel.ForEach(currentQueueArray, troop =>
             {
-                if (troop.Action != TroopAction.Stop)
+                if (troop != null && troop.Action != TroopAction.Stop)
                 {
                     troop.AddMoveAnimationIndex(steps);
                 }
-            }
+            });
         }
 
         public bool CurrentQueueEmpty
