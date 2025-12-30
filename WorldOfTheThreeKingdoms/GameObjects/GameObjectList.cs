@@ -154,16 +154,16 @@ namespace GameObjects
             //{
             //    obj2.Selected = false;
             //}
-            // 使用for循环比foreach稍快
-            //for (int i = 0; i < gameObjects.Count; i++)
-            //{
-            //    gameObjects[i].Selected = false;
-            //}
-            // 使用LINQ简化
-            foreach (var obj in gameObjects.Where(obj => obj.Selected))
+            //使用for循环比foreach稍快
+            for (int i = 0; i < gameObjects.Count; i++)
             {
-                obj.Selected = false;
+                gameObjects[i].Selected = false;
             }
+            //// 使用LINQ简化
+            //foreach (var obj in gameObjects.Where(obj => obj.Selected))
+            //{
+            //    obj.Selected = false;
+            //}
         }
 
         public List<int> GenerateRandomIndexList()
@@ -421,16 +421,16 @@ namespace GameObjects
         public GameObjectList GetSelectedList()
         {
             GameObjectList list = new GameObjectList();
-            //foreach (GameObject obj2 in this.gameObjects)
-            //{
-            //    if (obj2.Selected)
-            //    {
-            //        list.Add(obj2);
-            //    }
-            //}
+            foreach (GameObject obj2 in this.gameObjects)
+            {
+                if (obj2.Selected)
+                {
+                    list.Add(obj2);
+                }
+            }
             // 使用LINQ简化
-            var selectedObjects = gameObjects.Where(obj => obj.Selected).ToList();
-            list.AddRange(new GameObjectList { GameObjects = selectedObjects });
+            //var selectedObjects = gameObjects.Where(obj => obj.Selected).ToList();
+            //list.AddRange(new GameObjectList { GameObjects = selectedObjects });
             return list;
         }
 
@@ -470,16 +470,16 @@ namespace GameObjects
 
         public bool HasSelectedItem()
         {
-            //foreach (GameObject obj2 in this.gameObjects)
-            //{
-            //    if (obj2.Selected)
-            //    {
-            //        return true;
-            //    }
-            //}           
-            //return false;
+            foreach (GameObject obj2 in this.gameObjects)
+            {
+                if (obj2.Selected)
+                {
+                    return true;
+                }
+            }
+            return false;
             // 使用LINQ Any方法
-            return gameObjects.Any(obj => obj.Selected);
+            //return gameObjects.Any(obj => obj.Selected);
         }
 
         public int IndexOf(GameObject t)

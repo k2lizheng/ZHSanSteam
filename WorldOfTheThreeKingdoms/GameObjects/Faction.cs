@@ -1670,7 +1670,7 @@ namespace GameObjects
             this.AISelectPrince();
             this.AIZhaoXian();
             this.AIAppointMayor();
-            this.AIHouGong();
+            //this.AIHouGong();
             this.AIArchitectures();
             this.AITransfer();
             this.AILegions();
@@ -3348,7 +3348,7 @@ namespace GameObjects
             this.armyScale = this.ArmyScale; // 小写的是每天的缓存，因为被InternalSurplusRate叫很多次，不想每次都全部重新计算，大写的才是真正的值
             this.InternalSurplusRateCache = -1;
             this.visibleTroopsCache = null;
-            this.RefreshImportantPerson();
+            if (Session.Current.Scenario.IsPlayer(this)) { this.RefreshImportantPerson(); }
             this.troopSequence = -1;
         }
 
