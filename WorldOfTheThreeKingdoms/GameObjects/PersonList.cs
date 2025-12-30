@@ -70,7 +70,7 @@ namespace GameObjects
                 person.OnGossipFailed += new Person.GossipFailed(this.person_OnGossipFailed);
                 person.OnSearchFinished += new Person.SearchFinished(this.person_OnSearchFinished);
                 //person.OnSpyFound += new Person.SpyFound(this.person_OnSpyFound);
-                //person.OnTreasureFound += new Person.TreasureFound(this.person_OnTreasureFound);
+                person.OnTreasureFound += new Person.TreasureFound(this.person_OnTreasureFound);
                // person.OnShowMessage += new Person.ShowMessage(this.person_OnShowMessage);
                 person.OnDeath += new Person.Death(this.person_OnDeath);
                 person.OnLeave += new Person.Leave(this.person_OnLeave);
@@ -155,13 +155,10 @@ namespace GameObjects
 
         public void ApplyInfluences()
         {
-<<<<<<< Updated upstream
-            this.PurifyInfluences();
             foreach (Person person in base.GameObjects)
-=======
+
             // 使用并行处理（如果线程安全）
             if (base.GameObjects.Count > 100)
->>>>>>> Stashed changes
             {
                 Parallel.ForEach(base.GameObjects.OfType<Person>(), person =>
                 {
