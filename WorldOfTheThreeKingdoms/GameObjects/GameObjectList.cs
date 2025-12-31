@@ -764,7 +764,148 @@ namespace GameObjects
         {
             return gameObjects.OrderBy(selector).FirstOrDefault();
         }
+        /// <summary>
+        /// 将GameObjectList转换为数组
+        /// </summary>
+        /// <returns>包含所有GameObject的数组</returns>
+        public GameObject[] ToArray()
+        {
+            // 直接返回内部列表的数组副本
+            return gameObjects.ToArray();
+        }
 
+        /// <summary>
+        /// 将GameObjectList转换为指定类型的数组
+        /// </summary>
+        /// <typeparam name="T">目标类型（必须是GameObject或其子类）</typeparam>
+        /// <returns>包含指定类型对象的数组</returns>
+        public T[] ToArray<T>() where T : GameObject
+        {
+            // 方法1: 使用LINQ进行类型过滤和转换
+            return gameObjects.OfType<T>().ToArray();
+        }
+
+        /// <summary>
+        /// 将GameObjectList转换为数组（高效版本）
+        /// </summary>
+        /// <returns>包含所有GameObject的数组</returns>
+        public GameObject[] ToArrayFast()
+        {
+            if (gameObjects.Count == 0)
+                return Array.Empty<GameObject>();
+
+            // 方法2: 手动创建数组并填充，避免LINQ开销
+            var array = new GameObject[gameObjects.Count];
+            gameObjects.CopyTo(array, 0);
+            return array;
+        }
+
+        /// <summary>
+        /// 将GameObjectList转换为指定类型的数组（高效版本）
+        /// </summary>
+        /// <typeparam name="T">目标类型（必须是GameObject或其子类）</typeparam>
+        /// <returns>包含指定类型对象的数组</returns>
+        public T[] ToArrayFast<T>() where T : GameObject
+        {
+            if (gameObjects.Count == 0)
+                return Array.Empty<T>();
+
+            // 方法1: 预筛选类型
+            var list = new List<T>(gameObjects.Count);
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (gameObjects[i] is T item)
+                    list.Add(item);
+            }
+            return list.ToArray();
+
+            // 方法2: 使用LINQ但指定容量（对大型集合更友好）
+            // return gameObjects.Where(obj => obj is T).Cast<T>().ToArray();
+        }
+
+        /// <summary>
+        /// 将选中的GameObject转换为数组
+        /// </summary>
+        /// <returns>包含所有选中GameObject的数组</returns>
+        public GameObject[] SelectedToArray()
+        {
+            // 使用预分配列表以提高性能
+            var selectedList = new List<GameObject>();
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (gameObjects[i] != null && gameObjects[i].Selected)
+                    selectedList.Add(gameObjects[i]);
+            }
+            return selectedList.ToArray();
+        }
+
+        /// <summary>
+        /// 将选中的GameObject转换为指定类型的数组
+        /// </summary>
+        /// <typeparam name="T">目标类型</typeparam>
+        /// <returns>包含所有选中指定类型对象的数组</returns>
+        public T[] SelectedToArray<T>() where T : GameObject
+        {
+            var selectedList = new List<T>();
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (gameObjects[i] != null && gameObjects[i].Selected && gameObjects[i] is T item)
+                    selectedList.Add(item);
+            }
+            return selectedList.ToArray();
+        }
+
+        /// <summary>
+        /// 将GameObjectList转换为ID数组
+        /// </summary>
+        /// <returns>包含所有GameObject ID的数组</returns>
+        public int[] ToIdArray()
+        {
+            if (gameObjects.Count == 0)
+                return Array.Empty<int>();
+
+            var idArray = new int[gameObjects.Count];
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                idArray[i] = gameObjects[i]?.ID ?? -1;
+            }
+            return idArray;
+        }
+
+        /// <summary>
+        /// 将GameObjectList转换为Name数组
+        /// </summary>
+        /// <returns>包含所有GameObject Name的数组</returns>
+        public string[] ToNameArray()
+        {
+            if (gameObjects.Count == 0)
+                return Array.Empty<string>();
+
+            var nameArray = new string[gameObjects.Count];
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                nameArray[i] = gameObjects[i]?.Name ?? string.Empty;
+            }
+            return nameArray;
+        }
+
+        /// <summary>
+        /// 将GameObjectList转换为二维数组（ID和Name）
+        /// </summary>
+        /// <returns>包含ID和Name的二维数组</returns>
+        public object[,] ToIdNameArray()
+        {
+            if (gameObjects.Count == 0)
+                return new object[0, 2];
+
+            var result = new object[gameObjects.Count, 2];
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                result[i, 0] = gameObjects[i]?.ID ?? -1;
+                result[i, 1] = gameObjects[i]?.Name ?? string.Empty;
+            }
+            return result;
+        }
 
         /// <summary>
 
