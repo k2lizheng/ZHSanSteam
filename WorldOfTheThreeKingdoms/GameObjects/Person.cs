@@ -1989,10 +1989,9 @@ namespace GameObjects
                 if (this.TaskDays > 0) this.TaskDays = 0;
 
                 if (this.WorkKind != ArchitectureWorkKind.无) this.WorkKind = ArchitectureWorkKind.无;
+                if(this.RecruitmentMilitary!=null) this.RecruitmentMilitary.ID = -1;
 
-                this.RecruitmentMilitary.ID = -1;
-
-               // throw new Exception("try to kill person onway");
+                // throw new Exception("try to kill person onway");
             }
 
             foreach (Person p in Session.Current.Scenario.Persons)

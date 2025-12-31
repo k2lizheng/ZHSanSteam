@@ -10,11 +10,12 @@ using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
 using Microsoft.Xna.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
-using System.Linq;
 
 namespace GameObjects
 {
@@ -3290,7 +3291,8 @@ namespace GameObjects
                             && ((siege && current.Type == MilitaryType.器械) || (!siege && current.Type != MilitaryType.器械))
                             && current.CreateAvail(this))
                         {
-                            list2.Add(current);
+                            if (!list2.HasGameObject(current)) { list2.Add(current); }
+                            
                             if (list.ContainsKey(current))
                             {
                                 list[current] *= weight;
@@ -3301,8 +3303,8 @@ namespace GameObjects
                             }
                         }
                         if (current.CreateAvail(this))
-                        {
-                            allMilitaries2.Add(current);
+                        {                            
+                            if (!allMilitaries2.HasGameObject(current)) { allMilitaries2.Add(current); }
                             if (allMilitaries.ContainsKey(current))
                             {
                                 allMilitaries[current] *= weight;
@@ -5013,10 +5015,10 @@ namespace GameObjects
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
                     }
                 }
-                foreach (Military military in this.Militaries)
-                {
-                    faction.AddMilitary(military);
-                }
+                //foreach (Military military in this.Militaries)
+                //{
+                //    faction.AddMilitary(military);//属于重复添加
+                //}
                 foreach (Routeway routeway in this.Routeways)
                 {
                     faction.AddRouteway(routeway);
@@ -5595,6 +5597,7 @@ namespace GameObjects
             }
             routeway.StartArchitecture = this;
             this.Routeways.Add(routeway);
+            Session.Current.Scenario.Routeways.Add(routeway);
             GameArea routewayStartPoints = this.GetRoutewayStartPoints();
             int num = 0;
             for (num2 = 0; num2 < pointlist.Count; num2++)

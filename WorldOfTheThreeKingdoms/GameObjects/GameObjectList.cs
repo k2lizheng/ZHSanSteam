@@ -2,6 +2,7 @@
 using GameObjects.FactionDetail;
 using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
+using Microsoft.Xna.Framework;
 using SharpDX;
 using System;
 using System.Collections;
@@ -36,15 +37,18 @@ namespace GameObjects
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
         {
-            // 在反序列化开始前初始化字典
-            //idIndex = new Dictionary<int, GameObject>();
+            //在反序列化开始前初始化字典
+            if (idIndex == null)
+            {
+                idIndex = new Dictionary<int, GameObject>();
+            }
         }
 
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
         {
-            // 反序列化完成后重建索引
-            //RebuildIdIndex();
+            //反序列化完成后重建索引
+            RebuildIdIndex();
         }
         [DataMember]
         public bool IsNumber;
@@ -104,10 +108,62 @@ namespace GameObjects
                 {
                     idIndex = new Dictionary<int, GameObject>();
                 }
-                idIndex[obj.ID] = obj;
+                // 检查是否已存在相同ID的对象，避免冲突
+                if (!idIndex.ContainsKey(obj.ID))
+                {
+                    idIndex[obj.ID] = obj;
+                }
+                else if (obj.ID==0)
+                {
+                    obj.ID = gameObjects.Count;
+                    if (!idIndex.ContainsKey(obj.ID))
+                    {
+                        idIndex[obj.ID] = obj;
+                    }
+                }
+                else
+                {
+                    // 处理ID冲突：记录错误或使用新对象替换
+                    // 这里可以根据需求决定策略，比如使用Debug输出警告
+#if DEBUG
+                    Debug.WriteLine($"警告: ID冲突 - ID:{obj.ID} 已存在于索引中");
+#endif
+                }
             }
         }
+        // 添加一个方法验证索引一致性
+        public bool ValidateIndex()
+        {
+            if (gameObjects == null || idIndex == null)
+                return false;
 
+            // 检查每个对象的ID是否都在索引中
+            foreach (var obj in gameObjects)
+            {
+                if (obj != null && obj.ID >= 0)
+                {
+                    if (!idIndex.ContainsKey(obj.ID))
+                    {
+                        return false;
+                    }
+                    if (idIndex[obj.ID] != obj)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            // 检查索引中的每个对象是否都在列表中
+            foreach (var kvp in idIndex)
+            {
+                if (!gameObjects.Contains(kvp.Value))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
         private void RemoveFromIdIndex(GameObject obj)
         {
             if (obj != null && obj.ID >= 0 && idIndex != null)
@@ -124,6 +180,17 @@ namespace GameObjects
         {
             if (immutable)
                 throw new Exception("Trying to add things to an immutable list");
+            // 检查是否存在相同ID的对象
+            if (t != null && t.ID > 0 && HasGameObject(t.ID))
+            {
+                // 可以选择抛出异常或者静默处理
+                // 这里选择不添加重复ID的对象，根据需求可以改为抛出异常
+#if DEBUG
+                  Debug.WriteLine($"警告: ID冲突 - ID:{t.Name}{t.ID} 已存在");
+#endif
+                // throw new ArgumentException($"已存在ID为{t.ID}的对象");
+                return; // 不添加重复ID的对象
+            }
             this.gameObjects.Add(t);
             AddToIdIndex(t); // 更新ID索引
         }
@@ -210,42 +277,55 @@ namespace GameObjects
             //        return i;
             //    }
             //}
+            //throw new Exception("GetFreeGameObjectID Error.");
+            if (idIndex == null || idIndex.Count == 0)
+            {
+                for (int i = this.Count; i >= 0; i--)
+                {
+                    if (!this.HasGameObject(i))
+                    {
+                        RebuildIdIndex();
+                        return i;
+                    }
+                }
+            }           
+
             // 如果有索引，可以更快查找
-            if (idIndex.Count == 0) return 0;
+            //if (idIndex.Count == 0) return 0;
 
             // 从当前最大ID+1开始，向下查找空闲ID
             int maxId = idIndex.Keys.Max();
 
             // 最多查找1000个ID，避免无限循环
-            for (int i = Math.Max(0, maxId - 1000); i <= maxId + 1000; i++)
+            for (int i = maxId + 1; i <= maxId + 1000; i++)
             {
                 if (!idIndex.ContainsKey(i))
-                    return i;
-            }
 
-            // 如果没找到，返回最大ID+1
-            return maxId + 1;
+                    return i;
+
+            }
             throw new Exception("GetFreeGameObjectID Error.");
         }
 
         public GameObject GetGameObject(int ID)
         {
-            if (idIndex == null && ID >= 0)
+            if (ID < 0) return null;
+
+            // 确保idIndex不为null
+            if (idIndex == null)
             {
-                return this.gameObjects.FirstOrDefault(ga => ga != null && ga.ID == ID);
-                //foreach (GameObject obj2 in this.gameObjects)
-                //{
-                //    if (obj2.ID == ID)
-                //    {
-                //        return obj2;
-                //    }
-                //}
+                idIndex = new Dictionary<int, GameObject>();
+                RebuildIdIndex();
             }
-            else if (ID >= 0 && idIndex.TryGetValue(ID, out GameObject gameObject))
+
+            if (idIndex.TryGetValue(ID, out GameObject gameObject))
             {
                 return gameObject;
             }
-            return null;
+
+            // 如果索引中没有，可能是索引不一致，尝试从列表中查找
+            return this.gameObjects.FirstOrDefault(ga => ga != null && ga.ID == ID);
+       
         }
 
         public GameObject GetGameObject(string Name)
@@ -268,6 +348,7 @@ namespace GameObjects
             //    list.Add(obj2);
             //}
             list.gameObjects.AddRange(this.gameObjects); // 直接添加整个列表
+            
             return list;
         }
 
@@ -402,6 +483,7 @@ namespace GameObjects
             {
                 list.Add(this.gameObjects[num]);
             }
+            //RebuildIdIndex();
             return list;
         }
 
@@ -441,7 +523,7 @@ namespace GameObjects
 
         public bool HasGameObject(int ID)
         {
-            if (idIndex == null && ID >= 0)
+            if ((idIndex == null || idIndex.Count == 0) && ID >= 0)
             {
                 foreach (GameObject obj2 in this.gameObjects)
                 {
@@ -450,10 +532,22 @@ namespace GameObjects
                         return true;
                     }
                 }
-            }           
-            else return ID >= 0 && idIndex.ContainsKey(ID);
+            }
+            //if (ID < 0) return false;
 
-            return false;
+            //// 确保idIndex不为null
+            //if (idIndex == null)
+            //{
+            //    idIndex = new Dictionary<int, GameObject>();
+            //    RebuildIdIndex();
+            //}
+
+            return idIndex.ContainsKey(ID);
+
+            //if (idIndex.Count != gameObjects.Count)
+            //{ Console.WriteLine("不一致"); }
+
+            //return false;
         }
 
         public bool HasGameObject(string Name)
@@ -519,16 +613,19 @@ namespace GameObjects
         {
             if (immutable)
                 throw new Exception("Trying to remove things to an immutable list");
-            //this.gameObjects.RemoveAll(delegate(GameObject o)
-            //{
-            //    return o == gameObject;
+            //if(idIndex == null || idIndex.Count == 0) 
+            //{ 
+                this.gameObjects.RemoveAll(delegate (GameObject o)
+                {
+                    return o == gameObject;
+                }
+                );
             //}
-            //);
-            //this.gameObjects.Remove(gameObject);
-            if (gameObjects.Remove(gameObject))
-            {
-                RemoveFromIdIndex(gameObject); // 从索引中移除
-            }
+            ////this.gameObjects.Remove(gameObject);
+            //else if (gameObjects.Remove(gameObject))
+            //{
+            //    RemoveFromIdIndex(gameObject); // 从索引中移除
+            //}
         }
 
         public void RemoveAt(int index)
@@ -646,17 +743,18 @@ namespace GameObjects
                 if (immutable && index < gameObjects.Count)
                     throw new Exception("Trying to modify an immutable list");
 
-                if (index < gameObjects.Count)
-                {
-                    // 更新索引
-                    RemoveFromIdIndex(gameObjects[index]);
-                    gameObjects[index] = value;
-                    AddToIdIndex(value);
-                }
-                else
-                {
-                    throw new IndexOutOfRangeException();
-                }
+                gameObjects[index] = value;
+                //if (index < gameObjects.Count)
+                //{
+                //    // 更新索引
+                //    RemoveFromIdIndex(gameObjects[index]);
+                //    gameObjects[index] = value;
+                //    AddToIdIndex(value);
+                //}
+                //else
+                //{
+                //    throw new IndexOutOfRangeException();
+                //}
             }
         }
         // 批量操作
