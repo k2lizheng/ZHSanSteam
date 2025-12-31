@@ -615,17 +615,38 @@ namespace GameObjects
                 throw new Exception("Trying to remove things to an immutable list");
             //if(idIndex == null || idIndex.Count == 0) 
             //{ 
-                this.gameObjects.RemoveAll(delegate (GameObject o)
-                {
-                    return o == gameObject;
-                }
-                );
-            //}
-            ////this.gameObjects.Remove(gameObject);
-            //else if (gameObjects.Remove(gameObject))
+            //this.gameObjects.RemoveAll(delegate (GameObject o)
             //{
-            //    RemoveFromIdIndex(gameObject); // 从索引中移除
+            //    return o == gameObject;
             //}
+            //);
+            //}
+            // 如果列表中没有该对象，直接返回
+            //if (!gameObjects.Contains(gameObject))
+            //{
+            //    return;
+            //}
+            if ((idIndex != null || idIndex.Count > 0) && gameObjects.Remove(gameObject))
+            {
+                RemoveFromIdIndex(gameObject); // 从索引中移除
+                return;
+            }
+            // 如果需要移除所有匹配项
+            int removedCount = 0;
+            for (int i = gameObjects.Count - 1; i >= 0; i--)
+            {
+                if (gameObjects[i] == gameObject)
+                {
+                    gameObjects.RemoveAt(i);
+                    removedCount++;
+                }
+            }
+
+            // 如果移除了至少一个对象，更新索引
+            if (removedCount > 0)
+            {
+                RemoveFromIdIndex(gameObject);
+            }
         }
 
         public void RemoveAt(int index)
