@@ -5015,10 +5015,10 @@ namespace GameObjects
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
                     }
                 }
-                //foreach (Military military in this.Militaries)
-                //{
-                //    faction.AddMilitary(military);//属于重复添加
-                //}
+                foreach (Military military in this.Militaries)
+                {
+                    military.BelongedFaction = this.BelongedFaction;
+                }
                 foreach (Routeway routeway in this.Routeways)
                 {
                     faction.AddRouteway(routeway);
