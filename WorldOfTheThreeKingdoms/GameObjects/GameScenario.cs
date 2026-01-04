@@ -836,8 +836,8 @@ namespace GameObjects
                     {
                         person.BelongedFaction.ConsiderPromoteNvGuan(person);
                     }
+                    if(!this.AvailablePersons.HasGameObject(person)) this.AvailablePersons.Add(person);
 
-                    this.AvailablePersons.Add(person);
                     if (joinToPerson.BelongedFactionWithPrincess != null) { 
                         Session.MainGame.mainGameScreen.haizizhangdachengren(joinToPerson, person, false);
                     }

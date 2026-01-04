@@ -75,7 +75,7 @@ namespace GameObjects
             FactionList r = new FactionList();
             foreach (Faction i in f)
             {
-                if (i != null)
+                if (i != null && !r.HasGameObject(i))
                 {
                     r.Add(i);
                 }
