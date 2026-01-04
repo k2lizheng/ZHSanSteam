@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -106,7 +107,8 @@ namespace GameObjects
             {
                 if (idIndex == null)
                 {
-                    idIndex = new Dictionary<int, GameObject>();
+                    return;
+                    //idIndex = new Dictionary<int, GameObject>();
                 }
                 // 检查是否已存在相同ID的对象，避免冲突
                 if (!idIndex.ContainsKey(obj.ID))
@@ -176,12 +178,12 @@ namespace GameObjects
             immutable = true;
         }
 
-        public void Add(GameObject t)
+        public void Add(GameObject t, bool IDrepeat = false)
         {
             if (immutable)
                 throw new Exception("Trying to add things to an immutable list");
             // 检查是否存在相同ID的对象
-            if (t != null && t.ID > 0 && HasGameObject(t.ID))
+            if (!IDrepeat && t != null && t.ID >= 0 && HasGameObject(t.ID))
             {
                 // 可以选择抛出异常或者静默处理
                 // 这里选择不添加重复ID的对象，根据需求可以改为抛出异常
@@ -192,7 +194,7 @@ namespace GameObjects
                 return; // 不添加重复ID的对象
             }
             this.gameObjects.Add(t);
-            AddToIdIndex(t); // 更新ID索引
+            if(!IDrepeat) AddToIdIndex(t); // 更新ID索引
         }
 
         public void AddRange(GameObjectList t)
@@ -518,7 +520,22 @@ namespace GameObjects
 
         public bool HasGameObject(GameObject t)
         {
-            return (this.gameObjects.IndexOf(t) >= 0);
+            if (t == null) return false;
+            if ((idIndex == null || idIndex.Count == 0))
+            {
+                // 回退到线性查找（对于没有ID或ID为负的情况）
+                return (this.gameObjects.IndexOf(t) >= 0);
+            }
+            // 优先通过ID索引查找
+            else
+            {
+                // 通过ID查找，然后比较引用相等性
+                if (idIndex.TryGetValue(t.ID, out GameObject storedObj))
+                {
+                    return ReferenceEquals(storedObj, t);
+                }
+                return false;
+            }            
         }
 
         public bool HasGameObject(int ID)
