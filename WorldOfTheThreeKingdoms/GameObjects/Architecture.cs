@@ -5017,7 +5017,7 @@ namespace GameObjects
                 }
                 foreach (Military military in this.Militaries)
                 {
-                    military.BelongedFaction = this.BelongedFaction;
+                    faction.AddMilitary(military);
                 }
                 foreach (Routeway routeway in this.Routeways)
                 {
@@ -9899,7 +9899,7 @@ namespace GameObjects
 
         public bool IsSelfFoodEnough(LinkNode node, Routeway routeway)
         {
-            //if (routeway.LastPoint != null)   //临时加上，避免跳出
+            if (routeway.LastPoint != null)   //临时加上，避免跳出
             {
                 switch (node.Kind)
                 {
