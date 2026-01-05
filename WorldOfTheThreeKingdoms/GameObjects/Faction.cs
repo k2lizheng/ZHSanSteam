@@ -4844,11 +4844,22 @@ namespace GameObjects
 
         public void RemoveMilitary(Military military)
         {
-            this.Militaries.Remove(military);
+            //this.Militaries.Remove(military);
             /*if (this.militaryKindCounts.ContainsKey(military.Kind))
             {
                 this.militaryKindCounts[military.Kind]--;
             }*/
+            if (_allMilitaries.Remove(military))
+            {
+                // 2. 索引
+                ReindexMilitary(military);
+
+                // 3. 设置所属势力
+                //military.BelongedFaction = null;
+
+                // 4. 标记缓存脏
+                MarkCacheDirty();
+            }
             military.BelongedFaction = null;
         }
 
