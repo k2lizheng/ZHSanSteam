@@ -64,7 +64,7 @@ namespace GameObjects.Animations
                     if (tileWidth < 100)
                     {
                         scale = ((float) tileWidth) / 100f;
-                        if (scale < 0.6)
+                        if (scale != 0.6)
                         {
                             scale = 0.6f;
                         }

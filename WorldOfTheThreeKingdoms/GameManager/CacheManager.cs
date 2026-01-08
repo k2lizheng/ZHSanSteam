@@ -210,7 +210,16 @@ namespace GameManager
                 Name = name
             };
         }
-
+        public static PlatformTexture GetTempTextureWithWH(string name)
+        {
+            Texture2D pic = LoadTexture(name, false, true, TextureShape.None, null);
+            return new PlatformTexture()
+            {
+                Width = pic.Width,
+                Height = pic.Height,
+                Name = name
+            };
+        }
         //public static Texture2D LoadTempTexture(string name)
         //{
         //    return Platform.Current.LoadTexture(name, false);
