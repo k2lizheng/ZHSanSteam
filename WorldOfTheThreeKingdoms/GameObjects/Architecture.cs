@@ -3254,12 +3254,12 @@ namespace GameObjects
                             && ((siege && current.Type == MilitaryType.器械) || (!siege && current.Type != MilitaryType.器械))
                             && current.CreateAvail(this))
                         {
-                            list2.Add(current);
+                            list2.Add(current, true);
                             list.Add(current, weight);
                         }
                         if (current.CreateAvail(this))
                         {
-                            allMilitaries2.Add(current);
+                            allMilitaries2.Add(current, true);
                             allMilitaries.Add(current, weight);
                         }
                         /*if ((((this.ValueWater == (current.Type == MilitaryType.水军)) || (!water && GameObject.Chance(20))) && current.CreateAvail(this)) && (current.ID != 29))
@@ -3291,7 +3291,7 @@ namespace GameObjects
                             && ((siege && current.Type == MilitaryType.器械) || (!siege && current.Type != MilitaryType.器械))
                             && current.CreateAvail(this))
                         {
-                            if (!list2.HasGameObject(current)) { list2.Add(current); }
+                            list2.Add(current, true);
                             
                             if (list.ContainsKey(current))
                             {
@@ -3303,8 +3303,8 @@ namespace GameObjects
                             }
                         }
                         if (current.CreateAvail(this))
-                        {                            
-                            if (!allMilitaries2.HasGameObject(current)) { allMilitaries2.Add(current); }
+                        {
+                            allMilitaries2.Add(current, true);
                             if (allMilitaries.ContainsKey(current))
                             {
                                 allMilitaries[current] *= weight;
@@ -6308,13 +6308,13 @@ namespace GameObjects
             if (military.FollowedLeader != null && from.PersonsExcludeNvGuan.HasGameObject(military.FollowedLeader) && military.FollowedLeader.LocationTroop == null
                 && isPersonAllowedIntoTroop(military.FollowedLeader, military, offensive))
             {
-                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.FollowedLeader, from.PersonsExcludeNvGuan, true), military, from.Position, (int)(military.FollowedLeader.ID)));
+                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.FollowedLeader, from.PersonsExcludeNvGuan, true), military, from.Position, int.Parse(military.ID.ToString() + military.FollowedLeader.ID.ToString().PadLeft(5, '0'))));
             }
             else if (military.Leader != null && military.LeaderExperience >= 10 && (military.Leader.Strength >= 80 || military.Leader.Command >= 80 || military.Leader.HasLeaderValidTitle)
                 && from.PersonsExcludeNvGuan.HasGameObject(military.Leader) && military.Leader.LocationTroop == null && isPersonAllowedIntoTroop(military.Leader, military, offensive)
                )
             {
-                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.Leader, from.PersonsExcludeNvGuan, true), military, from.Position, (int)(military.Leader.ID)));
+                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.Leader, from.PersonsExcludeNvGuan, true), military, from.Position, int.Parse(military.ID.ToString() + military.Leader.ID.ToString().PadLeft(5, '0'))));
             }
             else
             {
@@ -6329,16 +6329,16 @@ namespace GameObjects
                     {
                         if (person.HasMilitaryKindTitle(military.Kind))
                         {
-                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString())));
+                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
                         }
                         else if (person.HasMilitaryTypeTitle(military.Kind.Type))
                         {
-                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString())));
+                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
                         }
                         else if ((this.BelongedFaction.AvailableMilitaryKinds.GetMilitaryKindList().GameObjects.Contains(military.Kind) && military.Kind.RecruitLimit > 10) ||
                             person.FightingForce >= Session.Parameters.AIUniqueTroopFightingForceThreshold || (this.Endurance < 30 && !offensive))
                         {
-                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString())));
+                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
                         }
                     }
                 }
