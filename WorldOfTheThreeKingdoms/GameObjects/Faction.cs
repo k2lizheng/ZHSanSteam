@@ -349,11 +349,13 @@ namespace GameObjects
                 foreach (Troop t in Troops)
                 {
                     foreach (Person p in t.Persons)
-                        result.Add(p);
+                    {
+                        if (!result.HasGameObject(p.ID)) result.Add(p);
+                    }
                 }
                 foreach (Captive c in Session.Current.Scenario.Captives)
                 {
-                    if (c.CaptiveFaction == this)
+                    if (c.CaptiveFaction == this && !result.HasGameObject(c.CaptivePerson.ID))
                     {
                         result.Add(c.CaptivePerson);
                     }
