@@ -3175,7 +3175,7 @@ namespace GameObjects
             this.OutsideTask = OutsideTaskKind.无;
             if (this.ConvincingPerson != null && this.ConvincingPerson.BelongedArchitecture != null)
             {
-                if (this.ConvincingPerson.BelongedFaction == this.BelongedFaction) return;
+                if (this.ConvincingPerson.BelongedFaction == null || this.ConvincingPerson.BelongedFaction == this.BelongedFaction) return;
 
                 Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.OutsideDestination.Value);
                 if (architectureByPosition != null && (this.ConvincingPerson.Status == PersonStatus.Normal || this.ConvincingPerson.Status == PersonStatus.NoFaction))
