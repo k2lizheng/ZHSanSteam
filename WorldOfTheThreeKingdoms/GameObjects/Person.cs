@@ -5774,7 +5774,7 @@ namespace GameObjects
         {
             get
             {
-                return WillLoseLoyalty || (this.BelongedCaptive.LocationArchitecture.captiveLoyaltyFall.Count > 0);
+                return WillLoseLoyalty || (this.BelongedCaptive != null && this.BelongedCaptive.LocationArchitecture.captiveLoyaltyFall.Count > 0);
             }
         }
 
