@@ -98,7 +98,7 @@ namespace GameObjects
             captive.ID = Session.Current.Scenario.Captives.GetFreeGameObjectID();
             captive.CaptivePerson = person;
             person.DecreaseReputation(50);
-            captive.CaptiveFaction = person.BelongedFaction;
+            captive.CaptiveFaction = capturingFaction;
             person.SetBelongedCaptive(captive, GameObjects.PersonDetail.PersonStatus.Captive);
             person.HeldCaptiveCount++;
             Session.Current.Scenario.Captives.AddCaptiveWithEvent(captive);
@@ -189,7 +189,7 @@ namespace GameObjects
                         else
                         {
                             //this.RansomArriveDays = (int) (Session.Current.Scenario.GetDistance(this.RansomArchitecture.ArchitectureArea, this.BelongedFaction.Capital.ArchitectureArea) / 5.0);
-                            this.RansomArriveDays = (int)(Session.Current.Scenario.GetDistance(this.RansomArchitecture.ArchitectureArea, this.BelongedFaction.Capital.ArchitectureArea) / 5.0) * Session.Parameters.DayInTurn;
+                            if (this.RansomArchitecture != null) this.RansomArriveDays = (int)(Session.Current.Scenario.GetDistance(this.RansomArchitecture.ArchitectureArea, this.BelongedFaction.Capital.ArchitectureArea) / 5.0) * Session.Parameters.DayInTurn;
                             if (this.RansomArriveDays <= 0)
                             {
                                 this.RansomArriveDays = 1;

@@ -291,6 +291,7 @@ namespace GameObjects
             {
                 this.GameCommonData = CommonData.Current;
             }
+            Captives = new CaptiveList();
         }
 
         private Dictionary<Architecture, PersonList>
@@ -599,25 +600,26 @@ namespace GameObjects
         [DataMember]
         public CaptiveList captiveData = new CaptiveList();
 
-        public CaptiveList Captives
-        {
-            get
-            {
-                CaptiveList result = new CaptiveList();
-                foreach (Person i in this.Persons)
-                {
-                    if (i.Status == PersonStatus.Captive)
-                    {
-                        if (i.BelongedCaptive == null)
-                        {
-                            continue;
-                        }
-                        result.Add(i.BelongedCaptive);
-                    }
-                }
-                return result;
-            }
-        }
+        public CaptiveList Captives = new CaptiveList();
+        //public CaptiveList Captives
+        //{
+        //    get
+        //    {
+        //        CaptiveList result = new CaptiveList();
+        //        foreach (Person i in this.Persons)
+        //        {
+        //            if (i.Status == PersonStatus.Captive)
+        //            {
+        //                if (i.BelongedCaptive == null)
+        //                {
+        //                    continue;
+        //                }
+        //                result.Add(i.BelongedCaptive);
+        //            }
+        //        }
+        //        return result;
+        //    }
+        //}
 
         public PersonList AvailablePersons
         {
@@ -3380,6 +3382,7 @@ namespace GameObjects
                         captive.CaptivePerson.SetBelongedCaptive(captive, PersonStatus.Captive);
 
                         captive.CaptivePerson.Status = PersonStatus.Captive;
+                        this.Captives.Add(captive);
                     }
 
                 }
@@ -4512,10 +4515,10 @@ namespace GameObjects
 
         public bool PositionIsOnFire(Point position)
         {
-            if (this.PositionOutOfRange(position))
-            {
-                return false;
-            }
+            //if (this.PositionOutOfRange(position))
+            //{
+            //    return false;
+            //}
             return this.FireTable.HasPosition(position);
         }
 
