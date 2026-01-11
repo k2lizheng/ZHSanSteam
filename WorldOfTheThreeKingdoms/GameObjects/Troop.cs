@@ -10595,7 +10595,7 @@ namespace GameObjects
                 Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
                 if ((troopByPosition != null) && this.IsFriendly(troopByPosition.BelongedFaction))
                 {
-                    if(!friendlyTroopsInView.HasGameObject(troopByPosition)) friendlyTroopsInView.Add(troopByPosition);
+                    if(!friendlyTroopsInView.HasGameObject(troopByPosition.ID)) friendlyTroopsInView.Add(troopByPosition);
 
                     switch (Session.Current.Scenario.GetTerrainKindByPositionNoCheck(point))
                     {
@@ -10662,7 +10662,7 @@ namespace GameObjects
                 Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
                 if ((troopByPosition != null) && !this.IsFriendly(troopByPosition.BelongedFaction))
                 {
-                    if(!hostileTroopsInView.HasGameObject(troopByPosition))hostileTroopsInView.Add(troopByPosition);
+                    if(!hostileTroopsInView.HasGameObject(troopByPosition.ID)) hostileTroopsInView.Add(troopByPosition);
                     switch (Session.Current.Scenario.GetTerrainKindByPositionNoCheck(point))
                     {
                         case TerrainKind.平原:
