@@ -9201,26 +9201,68 @@ namespace GameObjects
 
         private int ExpAddMthd(int ExperienceNow, int BaseAttribute)
         {
-            int num = 0;
-            while (ExperienceNow >= (int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500))
+            int exp = ExperienceNow;
+            int attr = BaseAttribute;
+            int levelUps = 0;
+
+            // 公式：expNeeded = baseExp + diff * scale
+            // 其中 diff = Math.Abs(attr - 50)
+            const int baseExp = 1000;  // 50级时的基础经验
+            const int scale = 30;     // 缩放系数
+
+            while (exp >= 0)
             {
-                ExperienceNow -= (int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500);
-                BaseAttribute++;
-                num++;
+                int diff = Math.Abs(attr - 50);
+                int expNeeded = baseExp + diff * scale;
+
+                if (exp >= expNeeded)
+                {
+                    exp -= expNeeded;
+                    attr++;
+                    levelUps++;
+                }
+                else
+                {
+                    break;
+                }
             }
-            return num;
+
+            return levelUps;
         }
 
         private int AttrLevelUpNeedExp(int ExperienceNow, int BaseAttribute)
         {
-            int num = 0;
-            int num2 = ExperienceNow;
-            while (num2 >= (int)(Math.Pow((BaseAttribute + num -50), 2) + 10 * BaseAttribute + 500))
+            const int baseExp = 1000;
+            const int scale = 30;
+
+            int remainingExp = ExperienceNow;
+            int currentAttr = BaseAttribute;
+            int usedExp = 0;
+
+            // 计算可以升多少级
+            while (remainingExp >= 0)
             {
-                num2 -= (int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500);
-                num++;
+                int diff = Math.Abs(currentAttr - 50);
+                int expNeeded = baseExp + diff * scale;
+
+                if (remainingExp >= expNeeded)
+                {
+                    remainingExp -= expNeeded;
+                    usedExp += expNeeded;
+                    currentAttr++;
+                }
+                else
+                {
+                    break;
+                }
             }
-            return ((int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500) - num2 + ExperienceNow);
+
+            // 计算下一级升级所需经验
+            int nextDiff = Math.Abs(currentAttr - 50);
+            int nextLevelExp = baseExp + nextDiff * scale;
+
+            // 按照原始函数逻辑：下一级所需经验 - 剩余经验 + 已使用的总经验
+            return nextLevelExp - remainingExp + usedExp;
         }
 
         public int StuntCount
