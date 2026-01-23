@@ -148,7 +148,7 @@ namespace GameObjects
                 {
                     try
                     {
-                        this.picture = CacheManager.GetTempTexture("Content/Textures/Resources/Treasure/" + this.Pic.ToString() + ".jpg");
+                        this.picture = CacheManager.GetTempTexture("Content/Textures/Resources/Treasure/" + this.Pic.ToString() + ".png");
                     }
                     catch
                     {
