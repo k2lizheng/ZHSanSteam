@@ -2979,7 +2979,6 @@ namespace GameObjects
                     {
                         captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital, Position, true, false, oldFaction);
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
-                        Session.Current.Scenario.Captives.Remove(captive);
                     }
                 }
                 faction.AddMilitary(this.Army);
@@ -3684,7 +3683,7 @@ namespace GameObjects
             return troop;
         }
 
-        public static Troop CreateSimulateTroop(GameObjectList persons, Military military, Point startPosition, int ID)
+        public static Troop CreateSimulateTroop(GameObjectList persons, Military military, Point startPosition, long ID)
         {
             Troop troop = new Troop();
             troop.Simulating = true;
@@ -3710,7 +3709,7 @@ namespace GameObjects
             military.Leader = troop.BackupArmyLeader;
             military.LeaderExperience = troop.BackupArmyLeaderExperience;
             military.LeaderID = troop.BackupArmyLeaderID;
-            troop.ID = ID;
+            troop.ID = unchecked((int)ID);
             return troop;
         }
 
@@ -6015,7 +6014,7 @@ namespace GameObjects
             foreach (Point point in sourceArea.Area)
             {
                 GameObjectList originalPersons = this.Persons.GetList();
-                Troop troop = CreateSimulateTroop(this.Candidates, this.Army, point, this.Army.ID);
+                Troop troop = CreateSimulateTroop(this.Candidates, this.Army, point, this.ID);
                 int fightingForce = troop.FightingForce;
                 troop.Destroy(true, false);
                 if (fightingForce > num)
@@ -10628,13 +10627,13 @@ namespace GameObjects
             this.ViewingDesertFriendlyTroopCount = 0;
             this.ViewingCliffFriendlyTroopCount = 0;
             this.ViewingFriendlyTroopCount = 0;
+            friendlyTroopsInView.Clear();
             foreach (Point point in this.ViewArea.Area)
             {
                 Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
                 if ((troopByPosition != null) && this.IsFriendly(troopByPosition.BelongedFaction))
                 {
-                    if(!friendlyTroopsInView.HasGameObject(troopByPosition.ID)) friendlyTroopsInView.Add(troopByPosition);
-
+                    friendlyTroopsInView.Add(troopByPosition);
                     switch (Session.Current.Scenario.GetTerrainKindByPositionNoCheck(point))
                     {
                         case TerrainKind.平原:
@@ -10695,12 +10694,13 @@ namespace GameObjects
             this.ViewingDesertHostileTroopCount = 0;
             this.ViewingCliffHostileTroopCount = 0;
             this.ViewingHostileTroopCount = 0;
+            hostileTroopsInView.Clear();
             foreach (Point point in this.ViewArea.Area)
             {
                 Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
                 if ((troopByPosition != null) && !this.IsFriendly(troopByPosition.BelongedFaction))
                 {
-                    if(!hostileTroopsInView.HasGameObject(troopByPosition.ID)) hostileTroopsInView.Add(troopByPosition);
+                    hostileTroopsInView.Add(troopByPosition);
                     switch (Session.Current.Scenario.GetTerrainKindByPositionNoCheck(point))
                     {
                         case TerrainKind.平原:

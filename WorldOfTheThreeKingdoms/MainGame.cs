@@ -96,7 +96,13 @@ namespace WorldOfTheThreeKingdoms
             Session.globalVariablesBasic.InitialGlobalVariables();
 
             Session.parametersBasic = new Parameters();
-            Session.parametersBasic.InitializeGameParameters();
+            try
+            {
+                Session.parametersBasic.InitializeGameParameters();
+            }
+            catch (Exception)
+            {
+            }
 
             //獲取設置數據
             Setting.Init(true);

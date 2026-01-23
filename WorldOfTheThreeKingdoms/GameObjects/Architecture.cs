@@ -5643,10 +5643,10 @@ namespace GameObjects
         public void checkEvent()
         {
             GameObjectList list = Session.Current.Scenario.AllEvents.GetList();
-            list.PropertyName = "ID";
-            list.SmallToBig = true;
-            list.IsNumber = true;
-            list.ReSort();
+            //list.PropertyName = "ID";
+            //list.SmallToBig = true;
+            //list.IsNumber = true;
+            //list.ReSort();
 
             foreach (Event e in list)
             {
@@ -6308,13 +6308,13 @@ namespace GameObjects
             if (military.FollowedLeader != null && from.PersonsExcludeNvGuan.HasGameObject(military.FollowedLeader) && military.FollowedLeader.LocationTroop == null
                 && isPersonAllowedIntoTroop(military.FollowedLeader, military, offensive))
             {
-                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.FollowedLeader, from.PersonsExcludeNvGuan, true), military, from.Position, int.Parse(military.ID.ToString() + military.FollowedLeader.ID.ToString().PadLeft(5, '0'))));
+                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.FollowedLeader, from.PersonsExcludeNvGuan, true), military, from.Position, long.Parse(military.ID.ToString() + military.FollowedLeader.ID.ToString().PadLeft(5, '0'))));
             }
             else if (military.Leader != null && military.LeaderExperience >= 10 && (military.Leader.Strength >= 80 || military.Leader.Command >= 80 || military.Leader.HasLeaderValidTitle)
                 && from.PersonsExcludeNvGuan.HasGameObject(military.Leader) && military.Leader.LocationTroop == null && isPersonAllowedIntoTroop(military.Leader, military, offensive)
                )
             {
-                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.Leader, from.PersonsExcludeNvGuan, true), military, from.Position, int.Parse(military.ID.ToString() + military.Leader.ID.ToString().PadLeft(5, '0'))));
+                result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(military.Leader, from.PersonsExcludeNvGuan, true), military, from.Position, long.Parse(military.ID.ToString() + military.Leader.ID.ToString().PadLeft(5, '0'))));
             }
             else
             {
@@ -6329,16 +6329,16 @@ namespace GameObjects
                     {
                         if (person.HasMilitaryKindTitle(military.Kind))
                         {
-                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
+                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, long.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
                         }
                         else if (person.HasMilitaryTypeTitle(military.Kind.Type))
                         {
-                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
+                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, long.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
                         }
                         else if ((this.BelongedFaction.AvailableMilitaryKinds.GetMilitaryKindList().GameObjects.Contains(military.Kind) && military.Kind.RecruitLimit > 10) ||
                             person.FightingForce >= Session.Parameters.AIUniqueTroopFightingForceThreshold || (this.Endurance < 30 && !offensive))
                         {
-                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, int.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
+                            result.Add(Troop.CreateSimulateTroop(this.AISelectPersonIntoTroop_inner(person, from.PersonsExcludeNvGuan, false), military, from.Position, long.Parse(military.ID.ToString() + person.ID.ToString().PadLeft(5, '0'))));
                         }
                     }
                 }
@@ -8681,7 +8681,7 @@ namespace GameObjects
                 {
                     if (display.Relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold && (display.LinkedFaction1 != null) && (display.LinkedFaction2 != null))
                     {
-                        this.ResetDiplomaticRelationList.Add(display);
+                        this.ResetDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -8697,7 +8697,7 @@ namespace GameObjects
                 {
                     if ((display.LinkedFaction1 != null) && (display.LinkedFaction2 != null))
                     {
-                        this.EnhanceDiplomaticRelationList.Add(display);
+                        this.EnhanceDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -8713,7 +8713,7 @@ namespace GameObjects
                 {
                     if ((display.Relation < Session.GlobalVariables.FriendlyDiplomacyThreshold && display.Relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold * 0.9) && ((display.LinkedFaction1 != null) && (display.LinkedFaction2 != null)))
                     {
-                        this.AllyDiplomaticRelationList.Add(display);
+                        this.AllyDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -8729,7 +8729,7 @@ namespace GameObjects
                 {
                     if (((display.LinkedFaction1 != null) && (display.LinkedFaction2 != null)) && display.Truce < 1)
                     {
-                        this.TruceDiplomaticRelationList.Add(display);
+                        this.TruceDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -8746,7 +8746,7 @@ namespace GameObjects
                     if (display.Relation < Session.GlobalVariables.FriendlyDiplomacyThreshold && (display.LinkedFaction1 != null) && (display.LinkedFaction2 != null)
                           && (this.BelongedFaction.AdjecentFactionList.GameObjects.Contains(display.LinkedFaction2) || this.BelongedFaction.AdjecentFactionList.GameObjects.Contains(display.LinkedFaction1)))
                     {
-                        this.QuanXiangDiplomaticRelationList.Add(display);
+                        this.QuanXiangDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -8789,7 +8789,7 @@ namespace GameObjects
                 {
                     if (display.Relation < Session.GlobalVariables.FriendlyDiplomacyThreshold && (display.LinkedFaction1 != null) && (display.LinkedFaction2 != null))
                     {
-                        this.DenounceDiplomaticRelationList.Add(display);
+                        this.DenounceDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -12072,7 +12072,7 @@ namespace GameObjects
                 {
                     if (display.LinkedFaction1 != null && display.LinkedFaction2 != null)
                     {
-                        this.GeDiDiplomaticRelationList.Add(display);
+                        this.GeDiDiplomaticRelationList.Add(display, true);
                     }
                 }
             }
@@ -15826,7 +15826,7 @@ namespace GameObjects
                             if (treasureSetting == null)
                             {
                                 // 添加调试信息
-                                Console.WriteLine($"未找到ID为 {influence.Parameter} 的TreasureCreationSetting");
+                                //Console.WriteLine($"未找到ID为 {influence.Parameter} 的TreasureCreationSetting");
                                 continue;
                             }
 
@@ -15840,7 +15840,7 @@ namespace GameObjects
                         }
                         catch (Exception)
                         {
-                            Console.WriteLine($"未找到ID为 {influence.Parameter} 的TreasureCreationSetting");
+                            //Console.WriteLine($"未找到ID为 {influence.Parameter} 的TreasureCreationSetting");
                             continue;
                         }
                         
@@ -15920,7 +15920,7 @@ namespace GameObjects
 
             p.ReceiveTreasure(treasure);
 
-            Console.WriteLine($"成功创建宝物: {treasure.Name} (ID: {treasure.ID})");
+            //Console.WriteLine($"成功创建宝物: {treasure.Name} (ID: {treasure.ID})");
         }
 
         #region 宝物
