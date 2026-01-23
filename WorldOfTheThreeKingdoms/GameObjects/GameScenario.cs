@@ -600,7 +600,7 @@ namespace GameObjects
         [DataMember]
         public CaptiveList captiveData = new CaptiveList();
 
-        public CaptiveList Captives = new CaptiveList();
+        public CaptiveList Captives { get; set; }
         //public CaptiveList Captives
         //{
         //    get
@@ -2585,7 +2585,7 @@ namespace GameObjects
 
         private void InitializeCaptiveData()
         {
-            foreach (Captive captive in this.Captives)
+            foreach (Captive captive in this.Captives.GetList())
             {
                 if (captive.CaptiveFactionID >= 0)
                 {
@@ -3380,9 +3380,7 @@ namespace GameObjects
                     else
                     {
                         captive.CaptivePerson.SetBelongedCaptive(captive, PersonStatus.Captive);
-
-                        captive.CaptivePerson.Status = PersonStatus.Captive;
-                        this.Captives.Add(captive);
+                        
                     }
 
                 }

@@ -98,7 +98,7 @@ namespace GameObjects
             captive.ID = Session.Current.Scenario.Captives.GetFreeGameObjectID();
             captive.CaptivePerson = person;
             person.DecreaseReputation(50);
-            captive.CaptiveFaction = capturingFaction;
+            captive.CaptiveFaction = person.BelongedFaction;
             person.SetBelongedCaptive(captive, GameObjects.PersonDetail.PersonStatus.Captive);
             person.HeldCaptiveCount++;
             Session.Current.Scenario.Captives.AddCaptiveWithEvent(captive);
@@ -207,12 +207,13 @@ namespace GameObjects
 
         private void DoRelease()
         {
-            Point position = this.CaptivePerson.Position;
+            Point position = this.CaptivePerson.Position;            
             if (this.CaptivePerson.BelongedFaction != null && this.CaptivePerson.BelongedFaction.Capital != null)
             {
                 Faction f = this.CaptivePerson.BelongedFaction;
                 this.CaptivePerson.LocationArchitecture = f.Capital;
-                this.CaptivePerson.Status = GameObjects.PersonDetail.PersonStatus.Normal;
+                //this.CaptivePerson.Status = GameObjects.PersonDetail.PersonStatus.Normal;
+                this.CaptivePerson.SetBelongedCaptive(null, GameObjects.PersonDetail.PersonStatus.Normal);
                 this.CaptivePerson.MoveToArchitecture(f.Capital, position, false, true, null);
             }
             
@@ -223,7 +224,7 @@ namespace GameObjects
                 return;
                 
             }
-            this.Clear();
+            this.Clear();            
         }
 
         public void Clear()

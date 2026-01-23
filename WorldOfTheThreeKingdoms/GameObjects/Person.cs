@@ -510,14 +510,17 @@ namespace GameObjects
 
         public void SetBelongedCaptive(Captive c, PersonStatus newState)
         {
-            this.belongedCaptive = c;
             if (c == null)
-            {
+            {                
+                Session.Current.Scenario.Captives.Remove(this.belongedCaptive);                
+                this.belongedCaptive = c;
                 this.Status = newState;
             }
             else
             {
+                this.belongedCaptive = c;
                 this.Status = PersonStatus.Captive;
+                Session.Current.Scenario.Captives.Add(this.belongedCaptive);
             }
         }
 
