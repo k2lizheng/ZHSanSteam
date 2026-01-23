@@ -292,6 +292,7 @@ namespace GameObjects
                 this.GameCommonData = CommonData.Current;
             }
             Captives = new CaptiveList();
+            AvailablePersons = new PersonList();
         }
 
         private Dictionary<Architecture, PersonList>
@@ -620,22 +621,23 @@ namespace GameObjects
         //        return result;
         //    }
         //}
+        public PersonList AvailablePersons { get; set; }
 
-        public PersonList AvailablePersons
-        {
-            get
-            {
-                PersonList result = new PersonList();
-                foreach (Person i in this.Persons)
-                {
-                    if (i.Status != PersonStatus.None && i.Alive && i.Available)
-                    {
-                        result.Add(i);
-                    }
-                }
-                return result;
-            }
-        }
+        //public PersonList AvailablePersons
+        //{
+        //    get
+        //    {
+        //        PersonList result = new PersonList();
+        //        foreach (Person i in this.Persons)
+        //        {
+        //            if (i.Status != PersonStatus.None && i.Alive && i.Available)
+        //            {
+        //                result.Add(i);
+        //            }
+        //        }
+        //        return result;
+        //    }
+        //}
 
         public PersonList DeadPersons
         {
@@ -838,8 +840,7 @@ namespace GameObjects
                     {
                         person.BelongedFaction.ConsiderPromoteNvGuan(person);
                     }
-                    if(!this.AvailablePersons.HasGameObject(person)) this.AvailablePersons.Add(person);
-
+                    //this.AvailablePersons.Add(person);
                     if (joinToPerson.BelongedFactionWithPrincess != null) { 
                         Session.MainGame.mainGameScreen.haizizhangdachengren(joinToPerson, person, false);
                     }
@@ -1359,7 +1360,12 @@ namespace GameObjects
             this.ClearPersonWorkCache();*/
 
             //clearupRepeatedOfficers();
-
+            var availablePersons = this.AvailablePersons.GetList();
+            // 并行更新重置缓存的五维带经验能力
+            Parallel.ForEach(availablePersons.Cast<Person>(), person =>
+            {
+                person.UpdateDailyFactors();
+            });
             this.Troops.FinalizeQueue();
             this.Factions.BuildQueue(false);
 
@@ -1419,12 +1425,14 @@ namespace GameObjects
 
 
             //this.GameProgressCaution.Text = "运行人物";
-            foreach (Person person in this.AvailablePersons.GetList())
+            //foreach (Person person in this.AvailablePersons.GetList())
+            //{
+            //    person.PreDayEvent();
+            //}
+            availablePersons = this.AvailablePersons.GetRandomList();
+            foreach (Person person in availablePersons)
             {
                 person.PreDayEvent();
-            }
-            foreach (Person person in this.AvailablePersons.GetRandomList())
-            {
                 person.DayEvent();
             }
             this.AdjustGlobalPersonRelation();
@@ -1657,26 +1665,27 @@ namespace GameObjects
 
         }
 
-        //public void DayStartingEvent()
-        //{
-        //    this.Factions.SetControlling(false);
-            
-        //    foreach (Troop troop in this.Troops.GetList())
-        //    {
-        //        if (troop.BelongedFaction == null || troop.BelongedLegion == null || !troop.BelongedLegion.Troops.HasGameObject(troop))
-        //        {
-        //            troop.AI();
-        //        }
-        //    }
-        //    this.Troops.BuildQueue();
-        //    foreach (Architecture architecture in this.Architectures.GetList())
-        //    {
-        //        architecture.HireFinished = false;
-        //        architecture.HasManualHire = false;
-        //        architecture.TodayPersonArriveNote = false;
+        public void DayStartingEvent()
+        {
+            this.Factions.SetControlling(false);
 
-        //    }
-        //}
+            foreach (Troop troop in this.Troops.GetList())
+            {
+                if (troop.BelongedFaction == null || troop.BelongedLegion == null || !troop.BelongedLegion.Troops.HasGameObject(troop))
+                {
+                    troop.AI();
+                }
+            }
+            this.Troops.BuildQueue();
+            foreach (Architecture architecture in this.Architectures.GetList())
+            {
+                architecture.HireFinished = false;
+                architecture.HasManualHire = false;
+                architecture.TodayPersonArriveNote = false;
+
+            }
+        }
+        /*
         public void DayStartingEvent()
         {
             this.Factions.SetControlling(false);
@@ -1751,7 +1760,7 @@ namespace GameObjects
                 architecture.TodayPersonArriveNote = false;
             });
         }
-
+        */
         public void FireDayEvent()
         {
             List<Point> list = new List<Point>();
@@ -3141,10 +3150,13 @@ namespace GameObjects
 
                 // this.AllChildren.Add(person, person.NumberOfChildren);
 
-                //if (person.Available && person.Alive)
-                //{
-                //    this.AvailablePersons.Add(person);  //已出场武将
-                //}
+                if (person.Available && person.Alive)
+                {
+                    this.AvailablePersons.Add(person);  //已出场武将
+                    person.LocationArchitecture = person.LocationArchitecture
+                        ?? (Session.Current.Scenario.Architectures.GetGameObject(person.AvailableLocation) as Architecture
+                        ?? this.Architectures.GetRandomObject() as Architecture);
+                }
             }
             
             foreach (Person p in this.Persons)
