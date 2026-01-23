@@ -250,6 +250,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
             Session.Current.Scenario.Date.SetSeason();
             //this.thisGame.jiazaitishi.jiazaijindu.Value = 90;
+            this.shangciCundangShijian = Session.Current.Scenario.DaySince;
         }
 
         private void JumpToFaction()
