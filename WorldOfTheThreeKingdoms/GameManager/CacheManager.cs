@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Platforms;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -497,7 +498,7 @@ namespace GameManager
                 Session.Current.SpriteBatch.Draw(tex, pos, source, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             }
         }
-
+        private static readonly ConcurrentDictionary<string, string> _portraitPathCache = new ConcurrentDictionary<string, string>();
         /// <summary>
         /// 获取人物头像
         /// </summary>
@@ -560,6 +561,12 @@ namespace GameManager
         /// <returns></returns>
         private static string GetPersonPortraitPath(int index, PortraitDefaultType? type = null, PortraitSize size = PortraitSize.Medium)
         {
+            // 创建缓存键
+            var cacheKey = $"{index}_{type}_{size}_{Setting.Current.PortraitPack}";
+            // 检查缓存
+            if (_portraitPathCache.TryGetValue(cacheKey, out var cachedPath))
+                return cachedPath;
+
             var defaultIndex = (int)(type ?? PortraitDefaultType.Military);
 
             var customDir = @"Content/Textures/GameComponents/PersonPortrait/Images/Player/";
@@ -585,12 +592,27 @@ namespace GameManager
             foreach (var path in paths)
             {
                 if (Platform.Current.FileExists(path))
+                {
+                    // 存入缓存
+                    _portraitPathCache.TryAdd(cacheKey, path);
                     return path;
+                }
             }
-
+            // 缓存空路径
+            _portraitPathCache.TryAdd(cacheKey, string.Empty);
             return string.Empty;
         }
+        // 提供清除缓存的方法
+        public static void ClearPortraitCache()
+        {
+            _portraitPathCache.Clear();
+        }
 
+        // 当设置变更时清除缓存
+        public static void PortraitOnSettingsChanged()
+        {
+            ClearPortraitCache();
+        }
         /// <summary>
         /// 替换mod路径
         /// </summary>
