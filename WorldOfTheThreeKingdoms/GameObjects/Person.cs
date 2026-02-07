@@ -2562,8 +2562,8 @@ namespace GameObjects
         public PersonList MakeAnyMarryableInFaction()
         {
             var list1 = MakeMarryable(false);
-            var list2 = MakeMarryable2(false);
-            list1.AddRange(list2);
+            //var list2 = MakeMarryable2(false);
+            //list1.AddRange(list2);
             return list1;
         }
 

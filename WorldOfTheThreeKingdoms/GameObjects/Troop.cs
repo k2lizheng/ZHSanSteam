@@ -5210,8 +5210,8 @@ namespace GameObjects
         public int GetCostByPosition(Point position, bool oblique, int DirectionCost, MilitaryKind kind)
         {
             //if ((this.Army.Kind.OneAdaptabilityKind > 0) && (this.Army.Kind.OneAdaptabilityKind != (int) Session.Current.Scenario.GetTerrainKindByPosition(position)))
-            if (!this.Army.Kind.IsShell && (kind.OneAdaptabilityKind > 0) && (kind.OneAdaptabilityKind != (int)Session.Current.Scenario.GetTerrainKindByPosition(position))
-                && Session.Current.Scenario.GetArchitectureByPosition(position) == null)
+            if ((kind.OneAdaptabilityKind > 0) && (kind.OneAdaptabilityKind != (int)Session.Current.Scenario.GetTerrainKindByPosition(position))
+                && Session.Current.Scenario.GetArchitectureByPosition(position) == null) //!this.Army.Kind.IsShell && 
             {
                 return 1000;
             }

@@ -5597,7 +5597,7 @@ namespace GameObjects
                 routeway.BelongedFaction = this.BelongedFaction;
             }           
             this.Routeways.Add(routeway);
-            Session.Current.Scenario.Routeways.Add(routeway);
+            //Session.Current.Scenario.Routeways.Add(routeway);
             GameArea routewayStartPoints = this.GetRoutewayStartPoints();
             int num = 0;
             for (num2 = 0; num2 < pointlist.Count; num2++)
