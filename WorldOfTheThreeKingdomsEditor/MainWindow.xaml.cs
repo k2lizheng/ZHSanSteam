@@ -69,14 +69,14 @@ namespace WorldOfTheThreeKingdomsEditor
         {
             get
             {
-                return Platforms.Platform.Current.GetMODFile(@"\Content\Data\Scenario");
+                return Platforms.Platform.Current.GetMODDir(@"\Content\Data\Scenario");
             }
         }
         private string CommonDir
         {
             get
             {
-                return Platforms.Platform.Current.GetMODFile(@"Content\Data\Common\CommonData.json");
+                return Platforms.Platform.Current.GetMODDir(@"Content\Data\Common\CommonData.json");
             }
         }
 

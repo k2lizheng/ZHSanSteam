@@ -603,7 +603,15 @@ namespace Platforms
         //{
 
         //}
-
+        public string GetMODDir(string res)
+        {
+            //切换MOD文件夹
+            if (!(Setting.Current == null || String.IsNullOrEmpty(Setting.Current.MODRuntime)))
+            {
+                res = res.Replace("Content", "MODs\\" + Setting.Current.MODRuntime);
+            }          
+            return res;
+        }
         #region 用戶文件夾處理
 
         public string GetMODFile(string res)
