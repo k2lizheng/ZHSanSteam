@@ -108,14 +108,14 @@ namespace GameObjects
         public Faction BelongedFaction
         {
             get
-            {
-                if (this.CaptivePerson.LocationArchitecture != null)
-                {
-                    return this.CaptivePerson.LocationArchitecture.BelongedFaction;
-                }
-                else if (this.CaptivePerson.LocationTroop != null)
+            {                
+                if (this.CaptivePerson.LocationTroop != null)
                 {
                     return this.CaptivePerson.LocationTroop.BelongedFaction;
+                }
+                else if (this.CaptivePerson.LocationArchitecture != null)
+                {
+                    return this.CaptivePerson.LocationArchitecture.BelongedFaction;
                 }
                 else
                 {
@@ -129,7 +129,11 @@ namespace GameObjects
         {
             get
             {
-                return this.CaptivePerson.LocationArchitecture;
+                if (this.CaptivePerson.LocationTroop != null)
+                {
+                    return this.CaptivePerson.LocationTroop.Leader.LocationArchitecture;
+                }
+                else return this.CaptivePerson.LocationArchitecture;
             }
         }
 

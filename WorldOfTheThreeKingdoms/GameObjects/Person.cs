@@ -5822,7 +5822,7 @@ namespace GameObjects
             }
             else
             {
-                if (this.LocationArchitecture != null)
+                if (this.BelongedCaptive.LocationArchitecture != null)
                 {
                     foreach (KeyValuePair<int, int> i in this.BelongedCaptive.LocationArchitecture.captiveLoyaltyFall)
                     {
