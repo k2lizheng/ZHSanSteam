@@ -1362,10 +1362,14 @@ namespace GameObjects
             //clearupRepeatedOfficers();
             var availablePersons = this.AvailablePersons.GetList();
             // 并行更新重置缓存的五维带经验能力
-            Parallel.ForEach(availablePersons.Cast<Person>(), person =>
+            //Parallel.ForEach(availablePersons.Cast<Person>(), person =>
+            //{
+            //    person.UpdateDailyFactors();
+            //});
+            foreach (Person person in availablePersons)
             {
                 person.UpdateDailyFactors();
-            });
+            }
             this.Troops.FinalizeQueue();
             this.Factions.BuildQueue(false);
 

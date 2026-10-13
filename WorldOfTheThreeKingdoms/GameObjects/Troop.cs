@@ -3683,7 +3683,7 @@ namespace GameObjects
             return troop;
         }
 
-        public static Troop CreateSimulateTroop(GameObjectList persons, Military military, Point startPosition, long ID)
+        public static Troop CreateSimulateTroop(GameObjectList persons, Military military, Point startPosition)
         {
             Troop troop = new Troop();
             troop.Simulating = true;
@@ -3709,7 +3709,7 @@ namespace GameObjects
             military.Leader = troop.BackupArmyLeader;
             military.LeaderExperience = troop.BackupArmyLeaderExperience;
             military.LeaderID = troop.BackupArmyLeaderID;
-            troop.ID = unchecked((int)ID);
+            //troop.ID = unchecked((int)ID);
             return troop;
         }
 
@@ -6014,7 +6014,7 @@ namespace GameObjects
             foreach (Point point in sourceArea.Area)
             {
                 GameObjectList originalPersons = this.Persons.GetList();
-                Troop troop = CreateSimulateTroop(this.Candidates, this.Army, point, this.ID);
+                Troop troop = CreateSimulateTroop(this.Candidates, this.Army, point);
                 int fightingForce = troop.FightingForce;
                 troop.Destroy(true, false);
                 if (fightingForce > num)
@@ -11631,7 +11631,13 @@ namespace GameObjects
                 }
                 else if (this.AIResetDestination())
                 {
-                    this.WillTroop = this.TargetTroop;
+                    try
+                    {
+                        this.WillTroop = this.TargetTroop;
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
                 else
                 {
@@ -13253,7 +13259,7 @@ namespace GameObjects
                         {
                             bool runAnimation = Session.Current.Scenario.IsKnownToAnyPlayer(this);
 
-                            bool oldInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(this.position);
+                            bool oldInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(this.PreviousPosition);
                             bool newInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(value);
                             bool changeArmyKind = oldInWater != newInWater;
 
@@ -13309,7 +13315,9 @@ namespace GameObjects
                             }
                             else
                             {
-                                this.StepNotFinished = false;
+                                // 加固：如果注册失败，再尝试重新注册一次，避免状态不同步
+                                Session.Current.Scenario.SetMapTileTroop(this);
+                                this.StepNotFinished = Session.Current.Scenario.GetTroopByPosition(this.position) == this;
                             }
                             if (this.FirstTierPath != null && runAnimation)
                             {

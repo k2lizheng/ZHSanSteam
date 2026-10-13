@@ -2553,7 +2553,10 @@ namespace GameObjects
                             int ransom = captive.Ransom;
                             if (GameObject.Random(ransom) > GameObject.Random(0x7d0))
                             {
-                                foreach (Architecture architecture in captive.BelongedFaction.Capital.GetClosestArchitectures(Session.Current.Scenario.Architectures.Count - 1))
+                                //foreach (Architecture architecture in captive.BelongedFaction.Capital.GetClosestArchitectures(Session.Current.Scenario.Architectures.Count - 1))
+                                ArchitectureList list = captive.CaptiveFaction.Capital.GetClosestArchitectures(Session.Current.Scenario.Architectures.Count - 1);
+                                list.Add(captive.CaptiveFaction.Capital);
+                                foreach (Architecture architecture in list)
                                 {
                                     if ((architecture.BelongedFaction != this) || ((architecture.PlanArchitecture != null) || !(architecture.IsFundEnough || !architecture.HasHostileTroopsInView())))
                                     {

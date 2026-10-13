@@ -46,11 +46,14 @@ namespace GameGlobal
 
             float scale = (Size == 0f ? 14 : Size) / 20;
 
-            var chars = text.ToCharArray();
+            if(text != null) 
+            { 
+                var chars = text.ToCharArray();
 
-            foreach (char ch in chars)
-            {
-                width += (ch > 128 ? 28 : 14);
+                foreach (char ch in chars)
+                {
+                    width += (ch > 128 ? 28 : 14);
+                }
             }
             return new Vector2(Convert.ToInt32(width * scale), 25 * scale);
         }

@@ -6161,7 +6161,7 @@ namespace GameObjects
             
             if (!moveFollower && NvGuan) return;
 
-            if (this.Status == PersonStatus.Captive || this.Status == PersonStatus.Princess) return;
+            //if (this.Status == PersonStatus.Captive || this.Status == PersonStatus.Princess) return;
 
             if (this.LocationTroop != null && !this.LocationTroop.Destroyed && !removeFromTroop) return;
 

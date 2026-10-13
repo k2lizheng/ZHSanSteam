@@ -259,6 +259,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 return tupian;
             }
 
+            if (Setting.Current.MOD.Contains("Shanshui") && (architecture.KindId == 2 || architecture.ID == 0 || architecture.ID == 105)) return null;
+
             if (architecture.Kind.ID == 2)
             {
                 if (architecture.JianzhuGuimo == 1)
