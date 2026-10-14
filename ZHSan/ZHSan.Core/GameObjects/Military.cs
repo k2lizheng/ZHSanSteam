@@ -97,7 +97,7 @@ namespace GameObjects
             {
                 Id = ID,
                 Name = Name,
-                KindId = KindID,
+                KindId = kindID,
                 Quantity = Quantity,
                 Morale = Morale,
                 Combativity = Combativity,

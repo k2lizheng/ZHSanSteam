@@ -11944,12 +11944,13 @@ namespace GameObjects
             this.PlanFacilityKind = null;
             this.PlanFacilityKindID = -1;
             this.SuspendTroopTransfer = 0;
-            if ((faction != null) && Session.Current.Scenario.IsPlayer(faction))
+
+            if (faction != null && Session.Current.Scenario.IsPlayer(faction))
             {
                 this.AutoHiring = true;
                 this.AutoRewarding = true;
-
             }
+
             if (this.BelongedFaction != null && this.BelongedFaction != faction)
             {
                 ClearFundPacks();
@@ -11957,125 +11958,32 @@ namespace GameObjects
                 this.ClearRouteways();
                 this.ReleaseAllCaptive();
                 this.PurifyFactionInfluences();
+
                 if (this.BelongedSection != null)
                 {
                     this.BelongedSection.RemoveArchitecture(this);
                 }
                 this.DefensiveLegion = null;
-                if (this == this.BelongedFaction.Capital || this.BelongedFaction.ArchitectureCount <= 1)
+
+                bool factionIsBeingDestroyed =
+                    this == this.BelongedFaction.Capital || this.BelongedFaction.ArchitectureCount <= 1;
+
+                if (factionIsBeingDestroyed)
                 {
-                    Person leader = this.BelongedFaction.Leader;
-                    while (this.Persons.Count > 0)
-                    {
-                        Person person2 = this.Persons[0] as Person;
-
-                        Session.Current.Scenario.YearTable.addBecomeNoFactionDueToDestructionEntry(Session.Current.Scenario.Date, person2, this.BelongedFaction);
-                        person2.Status = PersonStatus.NoFaction;
-                        person2.LocationArchitecture = this;
-                        if (leader == person2)
-                        {
-                            person2.Reputation = (int)(person2.Reputation * 0.6);
-                        }
-                        else
-                        {
-                            person2.Reputation = (int)(person2.Reputation * 0.95);
-                        }
-
-                        int hateDays = (int)((Math.Pow(5, person2.PersonalLoyalty - 2) * 10 + GameObject.Random(20) - 30) * Session.GlobalVariables.ProhibitFactionAgainstDestroyer);
-                        if (hateDays > 0)
-                        {
-                            if (person2.ProhibitedFactionID.ContainsKey(faction.ID))
-                            {
-                                person2.ProhibitedFactionID[faction.ID] += hateDays;
-                            }
-                            else
-                            {
-                                person2.ProhibitedFactionID.Add(faction.ID, hateDays);
-                            }
-                        }
-                    }
-
-                    foreach (var person2 in GetMovingPersons())
-                    {
-                        Session.Current.Scenario.YearTable.addBecomeNoFactionDueToDestructionEntry(Session.Current.Scenario.Date, person2, this.BelongedFaction);
-                        person2.OutsideTask = OutsideTaskKind.无;
-                        person2.TaskDays = 0;
-                        person2.Status = PersonStatus.NoFactionMoving;
-
-                        person2.LocationArchitecture = this;
-                        person2.TargetArchitecture = null;
-
-                        if (leader == person2)
-                        {
-                            person2.Reputation = (int)(person2.Reputation * 0.6);
-                        }
-                        else
-                        {
-                            person2.Reputation = (int)(person2.Reputation * 0.95);
-                        }
-
-                        int hateDays = (int)(Math.Pow(5, person2.PersonalLoyalty - 2) * 10 + GameObject.Random(20) - 10);
-                        if (hateDays > 0)
-                        {
-                            if (person2.ProhibitedFactionID.ContainsKey(faction.ID))
-                            {
-                                person2.ProhibitedFactionID[faction.ID] += hateDays;
-                            }
-                            else
-                            {
-                                person2.ProhibitedFactionID.Add(faction.ID, hateDays);
-                            }
-                        }
-                    }
-
-                    //if ((leader.LocationTroop == null) || leader.IsCaptive)
-                    {
-                        var list = BelongedFaction.Troops.ToList();
-                        foreach (var troop in list)
-                        {
-                            troop.FactionDestroy();
-                        }
-
-                        if (faction != null)
-                        {
-                            faction.CheckLeaderDeath(leader);
-                        }
-                        this.BelongedFaction.Destroy();
-
-                    }
-                    this.BelongedFaction.Capital = null;
+                    DestroyFactionAtArchitecture(faction);
                 }
                 else
                 {
-                    while (this.Persons.Count > 0)
-                    {
-                        if ((this.Persons[0] as Person).LocationArchitecture != null)
-                        {
-                            (this.Persons[0] as Person).MoveToArchitecture(this.BelongedFaction.Capital, this.Position, false, true, null);
-                        }
-                    }
-
-                    foreach (var movingPerson in GetMovingPersons())
-                    {
-                        if (movingPerson.LocationArchitecture != null)
-                        {
-                            movingPerson.MoveToArchitecture(BelongedFaction.Capital, Position, false, true, null);
-                        }
-                    }
-                    foreach (var military in BelongedFaction.TransferingMilitaries)
-                    {
-                        if (military.TargetArchitecture == this)
-                        {
-                            TransferMilitary(military, BelongedFaction.Capital);
-                        }
-                    }
+                    MigrateFactionAssetsToCapital();
                 }
+
                 if (this.BelongedFaction != null)
                 {
                     this.BelongedFaction.RemoveArchitectureMilitaries(this);
                     this.BelongedFaction.RemoveArchitectureKnownData(this);
                     this.BelongedFaction.RemoveArchitecture(this);
                 }
+
                 if (faction != null)
                 {
                     faction.AddArchitecture(this);
@@ -12094,28 +12002,182 @@ namespace GameObjects
                 faction.AddArchitectureMilitaries(Militaries);
             }
 
-            if (faction != null)
-            {
-                //this.jianzhuqizi.qizidezi.Text = faction.ToString().Substring(0, 1);
-            }
-
-            foreach (var architecture in Session.Current.Scenario.Architectures.Values)
-            {
-                architecture.RefreshViewArea();
-            }
-
-            foreach (var troop in Session.Current.Scenario.Troops.Values)
-            {
-                troop.RefreshViewArchitectureRelatedArea();
-            }
+            RefreshScenarioViews();
 
             AIBattlingArchitectures.Clear();
-            foreach (LinkNode i in this.AIAllLinkNodes.Values)
+
+            var linkNodes = this.AIAllLinkNodes.Values.ToList();
+            foreach (LinkNode i in linkNodes)
             {
                 i.A.CheckIsFrontLine();
             }
             this.CheckIsFrontLine();
-            ExtensionInterface.call("ArchitectureResetFaction", new Object[] { Session.Current.Scenario, this, oldFaction });
+
+            ExtensionInterface.call("ArchitectureResetFaction",
+                new Object[] { Session.Current.Scenario, this, oldFaction });
+        }
+
+        /// <summary>
+        /// 势力被灭（首都或最后一个城）时的人员/部队处理
+        /// </summary>
+        private void DestroyFactionAtArchitecture(Faction faction)
+        {
+            Person leader = this.BelongedFaction.Leader;
+            Faction belongedFaction = this.BelongedFaction;
+
+            // 1. 城内人员 -> NoFaction
+            //    用倒序或者一次性取出，避免 Persons 被 MoveToArchitecture 内部改动
+            while (this.Persons.Count > 0)
+            {
+                Person person2 = this.Persons[0] as Person;
+                if (person2 == null)
+                {
+                    // 防御：非 Person 元素，避免死循环
+                    this.Persons.RemoveAt(0);
+                    continue;
+                }
+
+                Session.Current.Scenario.YearTable.addBecomeNoFactionDueToDestructionEntry(
+                    Session.Current.Scenario.Date, person2, belongedFaction);
+
+                person2.Status = PersonStatus.NoFaction;
+                person2.LocationArchitecture = this;
+
+                person2.Reputation = (int)(person2.Reputation * (leader == person2 ? 0.6 : 0.95));
+
+                if (faction != null)
+                {
+                    ApplyHate(faction.ID, person2, extra: -30);
+                }
+
+                // 原代码靠 while + Persons[0] 迭代，若 LocationArchitecture 内部不移除会死循环
+                // 这里显式移除，保证一定能推进
+                if (this.Persons.Count > 0 && this.Persons[0] == person2)
+                {
+                    this.Persons.RemoveAt(0);
+                }
+            }
+
+            // 2. 移动中的人员 -> NoFactionMoving
+            //    MoveToArchitecture/其他调用可能改 GetMovingPersons() 返回的集合，先做快照
+            var movingPersons = GetMovingPersons().ToList();
+            foreach (var person2 in movingPersons)
+            {
+                Session.Current.Scenario.YearTable.addBecomeNoFactionDueToDestructionEntry(
+                    Session.Current.Scenario.Date, person2, belongedFaction);
+
+                person2.OutsideTask = OutsideTaskKind.无;
+                person2.TaskDays = 0;
+                person2.Status = PersonStatus.NoFactionMoving;
+                person2.LocationArchitecture = this;
+                person2.TargetArchitecture = null;
+
+                person2.Reputation = (int)(person2.Reputation * (leader == person2 ? 0.6 : 0.95));
+
+                if (faction != null)
+                {
+                    ApplyHate(faction.ID, person2, extra: -10);
+                }
+            }
+
+            // 3. 部队解散
+            var troops = belongedFaction.Troops.ToList();
+            foreach (var troop in troops)
+            {
+                troop.FactionDestroy();
+            }
+
+            if (faction != null)
+            {
+                faction.CheckLeaderDeath(leader);
+            }
+            belongedFaction.Destroy();
+            belongedFaction.Capital = null;
+        }
+
+        /// <summary>
+        /// 势力没被灭时，把人员/部队迁到首都
+        /// </summary>
+        private void MigrateFactionAssetsToCapital()
+        {
+            Faction belongedFaction = this.BelongedFaction;
+            Architecture capital = belongedFaction.Capital;
+
+            // 1. 城内人员搬迁
+            while (this.Persons.Count > 0)
+            {
+                var person = this.Persons[0] as Person;
+                if (person == null)
+                {
+                    this.Persons.RemoveAt(0);
+                    continue;
+                }
+
+                if (person.LocationArchitecture != null)
+                {
+                    person.MoveToArchitecture(capital, this.Position, false, true, null);
+                }
+                else
+                {
+                    // 防止死循环：LocationArchitecture 已为 null 时不会触发 Move
+                    this.Persons.RemoveAt(0);
+                }
+            }
+
+            // 2. 移动中的人员搬迁（先快照，MoveToArchitecture 可能改集合）
+            var movingPersons = GetMovingPersons().ToList();
+            foreach (var movingPerson in movingPersons)
+            {
+                if (movingPerson.LocationArchitecture != null)
+                {
+                    movingPerson.MoveToArchitecture(capital, this.Position, false, true, null);
+                }
+            }
+
+            // 3. 转移到本城的部队改道首都（先快照，TransferMilitary 会改 TransferingMilitaries）
+            var transfering = belongedFaction.TransferingMilitaries.ToList();
+            foreach (var military in transfering)
+            {
+                if (military.TargetArchitecture == this)
+                {
+                    TransferMilitary(military, capital);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 统一的仇恨计算，避免两处逻辑不一致
+        /// </summary>
+        private static void ApplyHate(int factionId, Person person, int extra)
+        {
+            int hateDays = (int)((Math.Pow(5, person.PersonalLoyalty - 2) * 10
+                + GameObject.Random(20) + extra)
+                * Session.GlobalVariables.ProhibitFactionAgainstDestroyer);
+
+            if (hateDays <= 0) return;
+
+            if (person.ProhibitedFactionID.ContainsKey(factionId))
+                person.ProhibitedFactionID[factionId] += hateDays;
+            else
+                person.ProhibitedFactionID.Add(factionId, hateDays);
+        }
+
+        /// <summary>
+        /// 场景视图刷新，全部先快照，防止内部方法改集合
+        /// </summary>
+        private static void RefreshScenarioViews()
+        {
+            var architectures = Session.Current.Scenario.Architectures.Values.ToList();
+            foreach (var architecture in architectures)
+            {
+                architecture.RefreshViewArea();
+            }
+
+            var troops = Session.Current.Scenario.Troops.Values.ToList();
+            foreach (var troop in troops)
+            {
+                troop.RefreshViewArchitectureRelatedArea();
+            }
         }
 
         private void ReSortAllWeighingList(List<Person> zhenzaiPersons, List<Person> agriculturePersons, List<Person> commercePersons,
