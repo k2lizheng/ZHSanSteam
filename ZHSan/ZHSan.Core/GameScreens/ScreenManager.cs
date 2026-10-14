@@ -94,7 +94,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         // 解散编队
         private void FrameFunction_Architecture_AfterGetBeDisbandedMilitaries()
         {
-            var militaries = CurrentArchitecture.Militaries.Where(x => x.Selected);
+            var militaries = CurrentArchitecture.Militaries.Where(x => x.Selected).ToList();
 
             foreach (var military in militaries)
             {
@@ -105,32 +105,41 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         // 合并
         private void FrameFunction_Architecture_AfterGetBeMergedMilitaries()
         {
-            // this.CurrentGameObjects = this.CurrentArchitecture.BeMergedMilitaryList.GetSelectedList();
-            // if (this.CurrentGameObjects != null)
-            // {
-            //     foreach (Military military in this.CurrentGameObjects)
-            //     {
-            //         int increment = (military.Quantity + this.CurrentMilitary.Quantity) - this.CurrentMilitary.Kind.MaxScale;
-            //         if (increment > 0)
-            //         {
-            //             this.CurrentMilitary.BelongedArchitecture.IncreasePopulation(increment);
-            //         }
-            //         if (military.LeaderID == this.CurrentMilitary.LeaderID)
-            //         {
-            //             this.CurrentMilitary.IncreaseQuantity(military.Quantity, military.Morale, military.Combativity, military.Experience, military.LeaderExperience);
-            //         }
-            //         else
-            //         {
-            //             this.CurrentMilitary.IncreaseQuantity(military.Quantity, military.Morale, military.Combativity, military.Experience, 0);
-            //         }
-            //     }
-            //     foreach (Military military in this.CurrentGameObjects)
-            //     {
-            //         this.CurrentArchitecture.RemoveMilitary(military);
-            //         this.CurrentArchitecture.BelongedFaction.RemoveMilitary(military);
-            //         Session.Current.Scenario.Militaries.Remove(military.ID);
-            //     }
-            // }
+            var toMerge = CurrentArchitecture.BeMergedMilitaryList.ToList();
+            //this.CurrentGameObjects = toMerge;
+
+            if (toMerge != null && toMerge.Count > 0)
+            {
+                var current = CurrentMilitary;
+                var maxScale = current.Kind.MaxScale;
+                var currentLeaderID = current.LeaderID;
+                var currentArchitecture = current.BelongedArchitecture;
+
+                foreach (Military military in toMerge)
+                {
+                    int increment = (military.Quantity + current.Quantity) - maxScale;
+                    if (increment > 0)
+                        currentArchitecture.IncreasePopulation(increment);
+
+                    current.IncreaseQuantity(
+                        military.Quantity,
+                        military.Morale,
+                        military.Combativity,
+                        military.Experience,
+                        military.LeaderID == currentLeaderID ? military.LeaderExperience : 0);
+                }
+
+                var architecture = this.CurrentArchitecture;
+                var faction = architecture.BelongedFaction;
+                var scenarioMilitaries = Session.Current.Scenario.Militaries;
+
+                foreach (Military military in toMerge)
+                {
+                    architecture.RemoveMilitary(military);
+                    faction.RemoveMilitary(military);
+                    scenarioMilitaries.Remove(military.ID);
+                }
+            }
         }
 
         #region 宝物

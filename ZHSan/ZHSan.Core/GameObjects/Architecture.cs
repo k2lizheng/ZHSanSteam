@@ -317,6 +317,7 @@ namespace GameObjects
         public List<PopulationPack> PopulationPacks { get; set; } = new();
 
         public List<Military> MergeMilitaryList { get; set; } = new();
+        public List<Military> BeMergedMilitaryList { get; set; } = new();
 
         public List<Military> Militaries { get; set; } = new();
 
@@ -5822,7 +5823,7 @@ namespace GameObjects
                         }
                     }
 
-                    var attackingTroops = BelongedFaction.GetLegion(a).Troops;
+                    var attackingTroops = BelongedFaction.GetLegion(a).Troops.ToList();
                     foreach (var troop in attackingTroops)
                     {
                         if (a.Endurance > 0)
@@ -7526,16 +7527,16 @@ namespace GameObjects
 
         public List<Military> GetBeMergedMilitaryList(Military military)
         {
-            var result = new List<Military>();
+            BeMergedMilitaryList.Clear();
 
             foreach (var otherMilitary in MergeMilitaryList)
             {
                 if (otherMilitary != military && otherMilitary.Kind.Equals(military.Kind))
                 {
-                    result.Add(otherMilitary);
+                    BeMergedMilitaryList.Add(otherMilitary);
                 }
             }
-            return result;
+            return BeMergedMilitaryList;
         }
 
         /// <summary>
@@ -8431,26 +8432,35 @@ namespace GameObjects
 
         public List<Military> GetMergeMilitaryList()
         {
-            var result = new List<Military>();
+            MergeMilitaryList.Clear();
 
-            foreach (var military in Militaries)
+            var groups = new Dictionary<MilitaryKind, List<Military>>();
+
+            foreach (var item in Militaries)
             {
-                if (military.Quantity == military.Kind.MaxScale || military.InjuryQuantity > 0) continue;
+                if (item is not Military m) continue;
+                if (m.Quantity == m.Kind.MaxScale) continue;
+                if (m.InjuryQuantity > 0) continue;
 
-                foreach (var otherMilitary in Militaries)
+                if (!groups.TryGetValue(m.Kind, out var list))
                 {
-                    if (military != otherMilitary 
-                        && military.Kind.Equals(otherMilitary.Kind)
-                        && otherMilitary.Quantity < otherMilitary.Kind.MaxScale
-                        && otherMilitary.InjuryQuantity == 0)
-                    {
-                        result.Add(military);
-                        break;
-                    }
+                    list = new List<Military>();
+                    groups[m.Kind] = list;
+                }
+                list.Add(m);
+            }
+
+            foreach (var list in groups.Values)
+            {
+                if (list.Count < 2) continue;
+
+                foreach (var m in list)
+                {
+                    MergeMilitaryList.Add(m);
                 }
             }
 
-            return result;
+            return MergeMilitaryList;
         }
 
         public GameArea GetMilitaryCampaignArea(Military military)
